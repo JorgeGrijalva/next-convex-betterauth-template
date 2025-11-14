@@ -4,7 +4,7 @@ export default function UnauthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-[#002BE7] via-[#0020B2] to-[#000E4C]">
       {children}
     </div>
   );

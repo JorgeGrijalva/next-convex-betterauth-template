@@ -101,7 +101,7 @@ export default function SignIn() {
                 className="mt-2 bg-slate-700 border-slate-600 text-white placeholder:text-gray-500"
               />
             </div>
-            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
+            <Button type="submit" className="w-full bg-[#002BE7] hover:bg-[#000E4C]" disabled={loading}>
               {loading ? "Ingresando..." : "Iniciar sesión"}
             </Button>
           </form>

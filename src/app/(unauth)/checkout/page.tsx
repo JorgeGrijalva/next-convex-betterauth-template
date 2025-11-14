@@ -51,7 +51,7 @@ function CheckoutInner() {
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="text-red-400 mb-2">Plan no especificado</div>
-              <Button onClick={() => router.push("/planes")} className="bg-purple-600 hover:bg-purple-700">
+              <Button onClick={() => router.push("/planes")} className="bg-[#002BE7] hover:bg-[#000E4C]">
                 Ver Planes
               </Button>
             </div>
@@ -76,7 +76,7 @@ function CheckoutInner() {
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="text-red-400 mb-2">Plan no encontrado</div>
-              <Button onClick={() => router.push("/planes")} className="bg-purple-600 hover:bg-purple-700">
+              <Button onClick={() => router.push("/planes")} className="bg-[#002BE7] hover:bg-[#000E4C]">
                 Ver Planes Disponibles
               </Button>
             </div>
@@ -390,7 +390,7 @@ function CheckoutInner() {
                   <Button
                     type="submit"
                     disabled={submitting || !selectedFile}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600"
+                    className="flex-1 bg-[#002BE7] hover:bg-[#000E4C] disabled:bg-slate-600"
                   >
                     {submitting ? "Procesando..." : "Completar Pedido"}
                   </Button>

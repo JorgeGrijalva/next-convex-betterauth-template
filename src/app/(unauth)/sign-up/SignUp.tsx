@@ -109,7 +109,7 @@ export default function SignUp() {
               <Label htmlFor="ref">Código de referido (opcional)</Label>
               <Input id="ref" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="mt-2" />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-[#002BE7] hover:bg-[#000E4C]" disabled={loading}>
               {loading ? "Creando cuenta..." : "Crear cuenta"}
             </Button>
           </form>
