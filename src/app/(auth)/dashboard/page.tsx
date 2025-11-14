@@ -16,9 +16,8 @@ import { useRouter } from "next/navigation";
 // } from "@/components/server";
 import { SignOutButton } from "@/components/client";
 import { api } from "@/utils/api";
-import { TodoList } from "@/components/todo-list";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, CreditCard, Upload, Users, Megaphone } from "lucide-react";
 import Image from "next/image";
 
 // Header Component - Shows user profile and navigation
@@ -91,23 +90,28 @@ const StatCard = ({
 // Quick Actions Component - Common actions users might take
 const QuickActions = () => {
   const actions = [
-    { label: "Documentation", href: "/documentation", description: "Learn how to use this template" },
-    { label: "API Reference", href: "/api-reference", description: "Explore available functions" },
+    { label: "Ver Planes", href: "/plans", description: "Explora nuestros planes de IPTV", icon: <CreditCard size={16} /> },
+    { label: "Subir Comprobante", href: "/payments", description: "Sube tu comprobante de pago", icon: <Upload size={16} /> },
+    { label: "Programa de Afiliados", href: "/affiliates", description: "Gana dinero refiriendo usuarios", icon: <Users size={16} /> },
+    { label: "Configuración", href: "/settings", description: "Ajusta tu perfil y preferencias", icon: <Settings size={16} /> },
   ];
 
   return (
     <div className="border rounded-lg p-6">
-      <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
+      <h2 className="text-lg font-medium mb-4">Acciones Rápidas</h2>
       <div className="space-y-3">
         {actions.map((action) => (
           <Link
             key={action.label}
             href={action.href}
-            className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
           >
-            <div className="font-medium text-sm">{action.label}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {action.description}
+            <div className="text-muted-foreground">{action.icon}</div>
+            <div>
+              <div className="font-medium text-sm">{action.label}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {action.description}
+              </div>
             </div>
           </Link>
         ))}
@@ -116,14 +120,14 @@ const QuickActions = () => {
   );
 };
 
-// Recent Activity Component - Shows recent user activity
+// Recent Activity Component - Shows recent user activity  
 const RecentActivity = () => {
-  const { data: todos } = api.todo.getAll.useQuery();
+  const { data: userDashboard } = api.users.getDashboard.useQuery();
   
-  // Transform recent todos into activity items
-  const activities = todos?.slice(0, 5).map((todo) => ({
-    action: `${todo.completed ? "Completed" : "Created"} todo: "${todo.text}"`,
-    time: new Date(todo.updatedAt).toLocaleString(),
+  // Transform recent payments into activity items
+  const activities = userDashboard?.recentPayments?.slice(0, 5).map((payment) => ({
+    action: `${payment.status === "APPROVED" ? "Pago aprobado" : payment.status === "REJECTED" ? "Pago rechazado" : "Pago enviado"} para plan ${payment.plan.name}`,
+    time: new Date(payment.createdAt).toLocaleDateString(),
   })) || [];
 
   return (
@@ -141,12 +145,55 @@ const RecentActivity = () => {
   );
 };
 
+// Announcements Feed Component - Shows latest announcements
+const AnnouncementsFeed = () => {
+  const { data: announcements } = api.announcements.getFeed.useQuery();
+
+  return (
+    <div className="border rounded-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-medium flex items-center gap-2">
+          <Megaphone className="w-5 h-5" />
+          Noticias y Anuncios
+        </h2>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/feed">Ver Todo</Link>
+        </Button>
+      </div>
+      
+      <div className="space-y-3">
+        {announcements && announcements.length > 0 ? (
+          announcements.slice(0, 3).map((announcement) => (
+            <div key={announcement.id} className="border rounded-lg p-3">
+              <div className="font-medium text-sm mb-1">{announcement.title}</div>
+              <div className="text-xs text-muted-foreground line-clamp-2">
+                {announcement.content}
+              </div>
+              <div className="text-xs text-muted-foreground mt-2">
+                {new Date(announcement.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-6 text-muted-foreground text-sm">
+            <Megaphone className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <div>No hay anuncios recientes</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Main Dashboard Content
 const DashboardContent = () => {
   const { data: session } = useSession();
-  const { data: todos } = api.todo.getAll.useQuery();
-  const totalTodos = todos?.length || 0;
-  const completedTodos = todos?.filter(todo => todo.completed).length || 0;
+  const { data: userDashboard } = api.users.getDashboard.useQuery();
+  const { data: affiliateStats } = api.affiliates.getMyStats.useQuery();
+  
+  const subscription = userDashboard?.subscription;
+  const totalPayments = userDashboard?.recentPayments?.length || 0;
+  const approvedPayments = userDashboard?.recentPayments?.filter(p => p.status === "APPROVED").length || 0;
 
   return (
     <div className="space-y-8">
@@ -160,19 +207,29 @@ const DashboardContent = () => {
 
       {/* Stats Grid - Real metrics from tRPC */}
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Total Todos" value={totalTodos} description="All todos created" />
-        <StatCard label="Completed" value={completedTodos} description="Finished todos" />
-        <StatCard label="Pending" value={totalTodos - completedTodos} description="Remaining todos" />
+        <StatCard 
+          label="Estado" 
+          value={subscription?.status === "ACTIVE" ? "Activo" : subscription?.status === "PENDING" ? "Pendiente" : "Inactivo"} 
+          description={subscription ? `Plan: ${subscription.plan.name}` : "Sin suscripción"} 
+        />
+        <StatCard 
+          label="Pagos" 
+          value={approvedPayments} 
+          description={`${totalPayments} pagos enviados`} 
+        />
+        <StatCard 
+          label="Referidos" 
+          value={affiliateStats?.totalReferrals || 0} 
+          description={`${affiliateStats?.totalConversions || 0} conversiones`} 
+        />
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Three Column Layout */}
+      <div className="grid gap-6 lg:grid-cols-3">
         <QuickActions />
         <RecentActivity />
+        <AnnouncementsFeed />
       </div>
-
-      {/* Todo Management Section */}
-      <TodoList />
 
       {/* Getting Started Section (Remove this after setup) */}
       <div className="border rounded-lg p-6 bg-muted/30">

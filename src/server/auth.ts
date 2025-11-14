@@ -22,16 +22,17 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role?: string;
       // ...other properties
-      // role: UserRole;
     } & DefaultSession["user"];
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+  interface User {
+    role?: string;
+    // ...other properties
+  }
 }
+
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -40,23 +41,36 @@ declare module "next-auth" {
  */
 export const authOptions: NextAuthOptions = {
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    session: async ({ session, token }) => {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+        
+        // Obtener rol del usuario de la base de datos
+        const user = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true },
+        });
+        
+        session.user.role = user?.role;
+      }
+      return session;
+    },
+    jwt: ({ token, user }) => {
+      if (user) {
+        token.role = (user as any).role;
+      }
+      return token;
+    },
   },
   adapter: PrismaAdapter(db) as Adapter,
   providers: [
     GithubProvider({
-      clientId: env.GITHUB_CLIENT_ID ?? "",
-      clientSecret: env.GITHUB_CLIENT_SECRET ?? "",
+      clientId: env.GITHUB_CLIENT_ID!,
+      clientSecret: env.GITHUB_CLIENT_SECRET!,
     }),
     GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
     }),
     /**
      * ...add more providers here.
@@ -68,6 +82,15 @@ export const authOptions: NextAuthOptions = {
      * @see https://next-auth.js.org/providers/github
      */
   ],
+  pages: {
+    signIn: "/sign-in",
+    // error: "/auth/error", // Error code passed in query string as ?error=
+    // verifyRequest: "/auth/verify-request", // (used for check email message)
+    // newUser: "/auth/new-user" // New users will be directed here on first sign in (leave the property out if not of interest)
+  },
+  session: {
+    strategy: "jwt",
+  },
 };
 
 /**

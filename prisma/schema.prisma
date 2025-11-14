@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Sistema IPTV - Base de Datos
+// Diseñado para gestión de suscripciones, pagos, afiliados y notificaciones
 
 generator client {
   provider = "prisma-client-js"
@@ -9,6 +9,10 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+// ================================
+// MODELOS DE AUTENTICACIÓN (NextAuth)
+// ================================
 
 model Account {
   id                String  @id @default(cuid())
@@ -37,17 +41,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  todos         Todo[]
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -56,13 +49,228 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// App-specific models
-model Todo {
-  id        String   @id @default(cuid())
-  text      String
-  completed Boolean  @default(false)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ================================
+// MODELOS PRINCIPALES DEL SISTEMA IPTV
+// ================================
+
+// Usuarios del Sistema (Clientes y Administradores)
+model User {
+  id                String    @id @default(cuid())
+  name              String
+  email             String?   @unique // Opcional
+  whatsapp          String    @unique // Campo principal para registro
+  password          String    // Hash de la contraseña
+  emailVerified     DateTime?
+  whatsappVerified  Boolean   @default(false)
+  
+  // Información adicional
+  image             String?
+  isActive          Boolean   @default(true)
+  
+  // Sistema de Afiliados
+  referralCode      String    @unique // Código único para referir usuarios
+  referredBy        String? // WhatsApp del usuario que lo refirió
+  referredByUser    User?     @relation("UserReferrals", fields: [referredBy], references: [whatsapp])
+  referredUsers     User[]    @relation("UserReferrals")
+  
+  // Roles de usuario
+  role              String    @default("CLIENT") // CLIENT, VERIFIER, ADMIN, SUPER_ADMIN
+  
+  // Fechas
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relaciones
+  accounts          Account[]
+  sessions          Session[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+  commissions       AffiliateCommission[] @relation("AffiliateCommissions")
+  earnedCommissions AffiliateCommission[] @relation("ReferredCommissions")
+  passwordResets    PasswordReset[]
+  
+  @@index([whatsapp])
+  @@index([referralCode])
+}
+
+// Roles de Usuario (como strings para SQLite)
+// CLIENT - Cliente normal
+// VERIFIER - Solo puede verificar pagos  
+// ADMIN - Administrador general
+// SUPER_ADMIN - Super administrador (dueño)
+
+// Planes de IPTV
+model Plan {
+  id            String   @id @default(cuid())
+  name          String   // Ej: "Plan Básico", "Plan Premium"
+  description   String?
+  price         Float    // Precio en la moneda local
+  currency      String   @default("MXN")
+  duration      Int      // Duración en días
+  features      String?  // JSON string con características
+  isActive      Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  subscriptions Subscription[]
+  payments      Payment[]
+}
+
+// Suscripciones de Usuario
+model Subscription {
+  id            String           @id @default(cuid())
+  userId        String
+  planId        String
+  status        String             @default("PENDING") // PENDING, ACTIVE, EXPIRED, CANCELLED
+  
+  startDate     DateTime?        // Fecha de inicio del servicio
+  endDate       DateTime?        // Fecha de vencimiento
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan             @relation(fields: [planId], references: [id])
+  
+  @@index([userId])
+  @@index([endDate])
+}
+
+// Estados de Suscripción (como strings para SQLite)
+// PENDING - Pendiente de pago
+// ACTIVE - Activa  
+// EXPIRED - Vencida
+// CANCELLED - Cancelada
+
+// Pagos del Sistema
+model Payment {
+  id            String        @id @default(cuid())
+  userId        String
+  planId        String
+  amount        Float
+  currency      String        @default("MXN")
+  
+  // Información del comprobante
+  reference     String?       // Referencia del pago
+  receiptImage  String?       // URL de la imagen del comprobante
+  paymentMethod String?       // Método de pago
+  
+  status        String        @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy    String?       // ID del admin que revisó
+  reviewNotes   String?       // Notas del revisor
+  
+  // Fechas
+  paidAt        DateTime?     // Fecha que dice el cliente que pagó
+  reviewedAt    DateTime?     // Fecha de revisión
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  user          User          @relation(fields: [userId], references: [id])
+  plan          Plan          @relation(fields: [planId], references: [id])
+  
+  @@index([userId])
+  @@index([status])
+}
+
+// Estados de Pago (como strings para SQLite)
+// PENDING - Pendiente de revisión
+// APPROVED - Aprobado
+// REJECTED - Rechazado
+
+// Feed de Anuncios para Clientes
+model AnnouncementFeed {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   // Contenido del anuncio
+  imageUrl    String?  // URL de imagen opcional
+  isPublished Boolean  @default(true)
+  
+  createdBy   String   // ID del admin que lo creó
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([isPublished, createdAt])
+}
+
+// Comisiones de Afiliados
+model AffiliateCommission {
+  id              String            @id @default(cuid())
+  affiliateId     String            // Usuario afiliado
+  referredUserId  String            // Usuario referido
+  
+  commissionType  String            // FIXED_AMOUNT, PERCENTAGE, FREE_DAYS
+  amount          Float?            // Monto monetario (si aplica)
+  days            Int?              // Días gratis (si aplica)
+  percentage      Float?            // Porcentaje del pago (si aplica)
+  
+  triggerPaymentId String?          // ID del pago que disparó la comisión
+  status          String            @default("PENDING") // PENDING, PAID, CANCELLED
+  
+  paidAt          DateTime?
+  createdAt       DateTime          @default(now())
+  
+  affiliate       User              @relation("AffiliateCommissions", fields: [affiliateId], references: [id])
+  referredUser    User              @relation("ReferredCommissions", fields: [referredUserId], references: [id])
+  
+  @@index([affiliateId])
+  @@index([status])
+}
+
+// Tipos de Comisión (como strings para SQLite)
+// FIXED_AMOUNT - Monto fijo
+// PERCENTAGE - Porcentaje del primer pago
+// FREE_DAYS - Días gratis
+
+// Estados de Comisión (como strings para SQLite)
+// PENDING - Pendiente
+// PAID - Pagada
+// CANCELLED - Cancelada
+
+// Configuración del Sistema de Afiliados
+model AffiliateConfig {
+  id              String          @id @default(cuid())
+  commissionType  String          @default("PERCENTAGE") // FIXED_AMOUNT, PERCENTAGE, FREE_DAYS
+  fixedAmount     Float?          
+  percentage      Float?          @default(10.0) // 10% por defecto
+  freeDays        Int?            
+  isActive        Boolean         @default(true)
+  
+  updatedAt       DateTime        @updatedAt
+  updatedBy       String          // ID del super admin que lo modificó
+}
+
+// Reset de Contraseñas (especial para WhatsApp)
+model PasswordReset {
+  id          String   @id @default(cuid())
+  userId      String
+  code        String   // Código de 6 dígitos para WhatsApp
+  type        String    @default("EMAIL") // EMAIL, WHATSAPP
+  isUsed      Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([code])
+  @@index([expiresAt])
+}
+
+// Tipos de Reset (como strings para SQLite)
+// EMAIL - Reset por email
+// WHATSAPP - Reset por WhatsApp con código
+
+// Estadísticas de Afiliados (para caché)
+model AffiliateStats {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  totalClicks     Int      @default(0)
+  totalReferrals  Int      @default(0)
+  totalConversions Int     @default(0)
+  totalCommissions Float   @default(0)
+  
+  lastUpdated     DateTime @updatedAt
+  
+  @@index([userId])
 }

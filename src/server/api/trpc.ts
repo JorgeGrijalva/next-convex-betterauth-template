@@ -121,6 +121,29 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   });
 });
 
+/** Reusable middleware that enforces users have admin privileges. */
+const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  const userRole = ctx.session.user.role;
+  const adminRoles = ["ADMIN", "SUPER_ADMIN", "VERIFIER"];
+  
+  if (!adminRoles.includes(userRole || "")) {
+    throw new TRPCError({ 
+      code: "FORBIDDEN",
+      message: "Se requieren privilegios de administrador"
+    });
+  }
+
+  return next({
+    ctx: {
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  });
+});
+
 /**
  * Protected (authenticated) procedure
  *
@@ -130,3 +153,10 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+
+/**
+ * Admin (authenticated + admin role) procedure
+ *
+ * Only accessible to users with ADMIN, SUPER_ADMIN, or VERIFIER roles.
+ */
+export const adminProcedure = t.procedure.use(enforceUserIsAuthed).use(enforceUserIsAdmin);
