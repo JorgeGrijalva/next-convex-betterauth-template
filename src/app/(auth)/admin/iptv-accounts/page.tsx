@@ -1,317 +1,320 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/utils/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  ArrowLeft, 
-  Search, 
-  Eye, 
-  EyeOff,
-  RefreshCw,
-  Shield,
-  ShieldOff,
-  Tv,
-  User,
-  Calendar,
-  Activity
-} from "lucide-react";
-import Link from "next/link";
+import { Label } from "@/components/ui/label";
+import { Search, Server, User, Key, Plus, Edit } from "lucide-react";
 
-export default function IptvAccountsManagement() {
-  const [search, setSearch] = useState("");
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
-  const [selectedAccount, setSelectedAccount] = useState<any>(null);
-
-  // Queries
-  const { data: accounts, refetch } = api.iptvAccounts.getAllAccounts.useQuery({
-    search: search || undefined,
-    limit: 50,
-  });
+export default function AdminIptvAccountsPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   
-  const { data: stats } = api.iptvAccounts.getStats.useQuery();
+  const { data: accounts, isLoading } = api.iptvAccounts.getAll.useQuery({
+    search: searchTerm,
+    status: statusFilter === "all" ? undefined : statusFilter,
+  });
 
-  // Mutations
-  const regeneratePassword = api.iptvAccounts.regeneratePassword.useMutation({
+  const { data: users } = api.users.getAllUsers.useQuery({});
+  const utils = api.useUtils();
+
+  const createAccount = api.iptvAccounts.create.useMutation({
     onSuccess: () => {
-      refetch();
-      setSelectedAccount(null);
+      utils.iptvAccounts.getAll.invalidate();
     },
   });
 
-  const toggleActive = api.iptvAccounts.toggleActive.useMutation({
+  const updateAccount = api.iptvAccounts.update.useMutation({
     onSuccess: () => {
-      refetch();
+      utils.iptvAccounts.getAll.invalidate();
     },
   });
 
-  const handleRegeneratePassword = async (accountId: string) => {
-    if (!confirm("¿Estás seguro de que quieres regenerar la contraseña? El usuario actual perderá acceso hasta que use las nuevas credenciales.")) {
-      return;
-    }
-
-    try {
-      const result = await regeneratePassword.mutateAsync({ accountId });
-      alert(`Nueva contraseña generada: ${result.newPassword}`);
-    } catch (error) {
-      alert("Error al regenerar la contraseña");
-    }
-  };
-
-  const handleToggleActive = async (accountId: string, currentStatus: boolean) => {
-    const action = currentStatus ? "desactivar" : "activar";
-    if (!confirm(`¿Estás seguro de que quieres ${action} esta cuenta IPTV?`)) return;
-
-    try {
-      await toggleActive.mutateAsync({ accountId });
-      alert(`Cuenta ${action === "desactivar" ? "desactivada" : "activada"} exitosamente`);
-    } catch (error) {
-      alert("Error al cambiar el estado de la cuenta");
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-600">Activo</Badge>;
+      case "suspended":
+        return <Badge className="bg-red-600">Suspendido</Badge>;
+      case "expired":
+        return <Badge className="bg-yellow-600">Expirado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const togglePasswordVisibility = (accountId: string) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [accountId]: !prev[accountId]
-    }));
-  };
+  const AccountForm = ({ account = null, onClose }: { account?: any; onClose: () => void }) => {
+    const [formData, setFormData] = useState({
+      username: account?.username || "",
+      password: account?.password || "",
+      serverUrl: account?.serverUrl || "",
+      status: account?.status || "active",
+      userId: account?.userId || "",
+    });
 
-  return (
-    <div className="min-h-screen w-full p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Panel Admin
-            </Link>
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (account) {
+        updateAccount.mutate({
+          id: account.id,
+          ...formData,
+        });
+      } else {
+        createAccount.mutate(formData);
+      }
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="userId" className="text-white">Usuario</Label>
+          <Select
+            value={formData.userId}
+            onValueChange={(value) => setFormData({ ...formData, userId: value })}
+            required
+          >
+            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+              <SelectValue placeholder="Seleccionar usuario" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              {users?.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.name} ({user.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="username" className="text-white">Nombre de Usuario</Label>
+          <Input
+            id="username"
+            value={formData.username}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            className="bg-gray-700 border-gray-600 text-white"
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="password" className="text-white">Contraseña</Label>
+          <Input
+            id="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            className="bg-gray-700 border-gray-600 text-white"
+            required={!account}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="serverUrl" className="text-white">URL del Servidor</Label>
+          <Input
+            id="serverUrl"
+            value={formData.serverUrl}
+            onChange={(e) => setFormData({ ...formData, serverUrl: e.target.value })}
+            className="bg-gray-700 border-gray-600 text-white"
+            placeholder="http://tuservidor.com:8080"
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="status" className="text-white">Estado</Label>
+          <Select
+            value={formData.status}
+            onValueChange={(value) => setFormData({ ...formData, status: value })}
+          >
+            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectItem value="active">Activo</SelectItem>
+              <SelectItem value="suspended">Suspendido</SelectItem>
+              <SelectItem value="expired">Expirado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex gap-3 pt-4">
+          <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            {account ? "Actualizar" : "Crear"} Cuenta
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
           </Button>
         </div>
+      </form>
+    );
+  };
 
-        {/* Page Title */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Gestión de Cuentas IPTV</h1>
-            <p className="text-muted-foreground">
-              Administrar credenciales y acceso al servicio IPTV
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid gap-6 md:grid-cols-4 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Cuentas</CardTitle>
-                <Tv className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.total}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Cuentas Activas</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.active}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Cuentas Inactivas</CardTitle>
-                <ShieldOff className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.inactive}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Usadas Recientemente</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.recentlyUsed}</div>
-                <p className="text-xs text-muted-foreground">Últimos 7 días</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Search */}
-        <div className="flex gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Buscar por usuario, perfil o usuario IPTV..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Accounts List */}
-        {accounts && accounts.length > 0 ? (
-          <div className="space-y-4">
-            {accounts.map((account) => (
-              <Card key={account.id}>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{account.user.name}</span>
-                        </div>
-                        <Badge variant="outline">{account.user.whatsapp}</Badge>
-                        <Badge variant={account.isActive ? "default" : "destructive"}>
-                          {account.isActive ? "Activa" : "Inactiva"}
-                        </Badge>
-                        {account.user.subscriptions[0] && (
-                          <Badge variant="outline">
-                            {account.user.subscriptions[0].plan.name}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="grid md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <div className="text-muted-foreground">Usuario IPTV</div>
-                          <div className="font-mono">{account.username}</div>
-                        </div>
-                        
-                        <div>
-                          <div className="text-muted-foreground">Contraseña</div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono">
-                              {showPasswords[account.id] ? account.password : '••••••••'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => togglePasswordVisibility(account.id)}
-                            >
-                              {showPasswords[account.id] ? (
-                                <EyeOff className="w-3 h-3" />
-                              ) : (
-                                <Eye className="w-3 h-3" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-muted-foreground">Servidor</div>
-                          <div className="font-mono text-xs">
-                            {account.serverUrl}
-                            {account.port && `:${account.port}`}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-muted-foreground">Conexiones / Última Vez</div>
-                          <div>
-                            <div>Máx: {account.maxConnections}</div>
-                            <div className="text-xs">
-                              {account.lastUsed 
-                                ? new Date(account.lastUsed).toLocaleDateString()
-                                : "Nunca"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {account.notes && (
-                        <div className="mt-3 pt-3 border-t text-sm">
-                          <span className="text-muted-foreground">Notas:</span>
-                          <div className="mt-1 p-2 bg-muted rounded text-xs">
-                            {account.notes}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRegeneratePassword(account.id)}
-                        disabled={regeneratePassword.isPending}
-                      >
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Nueva Contraseña
-                      </Button>
-
-                      <Button
-                        variant={account.isActive ? "destructive" : "default"}
-                        size="sm"
-                        onClick={() => handleToggleActive(account.id, account.isActive)}
-                        disabled={toggleActive.isPending}
-                      >
-                        {account.isActive ? (
-                          <>
-                            <ShieldOff className="w-4 h-4 mr-2" />
-                            Desactivar
-                          </>
-                        ) : (
-                          <>
-                            <Shield className="w-4 h-4 mr-2" />
-                            Activar
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-muted-foreground mb-4">
-              <Tv className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No se encontraron cuentas IPTV</h3>
-            <p className="text-muted-foreground">
-              {search 
-                ? "Intenta con otros términos de búsqueda" 
-                : "No hay cuentas IPTV creadas aún"}
-            </p>
-          </div>
-        )}
-
-        {/* Info */}
-        <div className="mt-8 bg-muted/30 rounded-lg p-6">
-          <h3 className="font-medium mb-2">Información Importante</h3>
-          <div className="text-sm text-muted-foreground space-y-1">
-            <div>• Las cuentas IPTV se crean automáticamente cuando se aprueba el primer pago de un usuario</div>
-            <div>• Regenerar la contraseña enviará las nuevas credenciales por WhatsApp al usuario</div>
-            <div>• Las cuentas inactivas no pueden acceder al servicio IPTV</div>
-            <div>• La información de "Última Vez" se actualiza cuando el usuario marca su cuenta como utilizada</div>
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Server className="w-12 h-12 mx-auto mb-4 text-purple-400 animate-pulse" />
+            <p className="text-gray-400">Cargando cuentas IPTV...</p>
           </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
+            <Server className="w-8 h-8 text-purple-400" />
+            Gestión de Cuentas IPTV
+          </h1>
+          <p className="text-gray-400">Administrar credenciales de acceso IPTV</p>
+        </div>
+        
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Cuenta
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-gray-800 border-gray-600">
+            <DialogHeader>
+              <DialogTitle className="text-white">Crear Nueva Cuenta IPTV</DialogTitle>
+            </DialogHeader>
+            <AccountForm onClose={() => setIsCreateOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="bg-gray-800 rounded-lg p-6 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Buscar por usuario o servidor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-48 bg-gray-700 border-gray-600 text-white">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="active">Activo</SelectItem>
+              <SelectItem value="suspended">Suspendido</SelectItem>
+              <SelectItem value="expired">Expirado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-gray-700">
+              <TableHead className="text-gray-300">Usuario</TableHead>
+              <TableHead className="text-gray-300">Credenciales</TableHead>
+              <TableHead className="text-gray-300">Servidor</TableHead>
+              <TableHead className="text-gray-300">Estado</TableHead>
+              <TableHead className="text-gray-300">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {accounts?.map((account) => (
+              <TableRow key={account.id} className="border-gray-700 hover:bg-gray-700/50">
+                <TableCell>
+                  <div>
+                    <p className="font-medium text-white">{account.user.name}</p>
+                    <p className="text-sm text-gray-400">{account.user.email}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-300 font-mono text-sm">{account.username}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Key className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-300 font-mono text-sm">••••••••</span>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-gray-300 max-w-xs truncate">
+                    {account.serverUrl}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(account.status)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingPlan(account)}
+                      className="border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        
+        {accounts?.length === 0 && (
+          <div className="text-center py-8">
+            <Server className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+            <p className="text-gray-400">No se encontraron cuentas IPTV</p>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={!!editingPlan} onOpenChange={() => setEditingPlan(null)}>
+        <DialogContent className="bg-gray-800 border-gray-600">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar Cuenta IPTV</DialogTitle>
+          </DialogHeader>
+          {editingPlan && (
+            <AccountForm account={editingPlan} onClose={() => setEditingPlan(null)} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

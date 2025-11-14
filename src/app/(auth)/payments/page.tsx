@@ -30,6 +30,7 @@ function PaymentsPageContent() {
   // Queries
   const { data: plans } = api.plans.getActivePlans.useQuery();
   const { data: myPayments, refetch: refetchPayments } = api.payments.getMyPayments.useQuery();
+  const { data: affiliateStats } = api.affiliates.getMyStats.useQuery();
   
   // Mutations
   const createPayment = api.payments.create.useMutation({
@@ -46,6 +47,8 @@ function PaymentsPageContent() {
   });
 
   const selectedPlan = plans?.find(p => p.id === planId);
+  const walletAvailable = affiliateStats?.pendingCommissions || 0;
+  const [useWallet, setUseWallet] = useState(false);
 
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,13 +95,15 @@ function PaymentsPageContent() {
     const receiptImageUrl = `https://placeholder-receipts.com/${selectedFile.name}`;
 
     try {
+      const walletUseAmount = useWallet ? Math.min(walletAvailable, selectedPlan.price) : 0;
       await createPayment.mutateAsync({
         planId: selectedPlan.id,
-        amount: selectedPlan.price,
+        amount: selectedPlan.price - walletUseAmount,
         reference: formData.reference,
         receiptImage: receiptImageUrl,
         paymentMethod: formData.paymentMethod || "Transferencia Bancaria",
         paidAt: formData.paidAt,
+        walletUseAmount,
       });
 
       alert("¡Comprobante enviado exitosamente! Será revisado en las próximas horas.");
@@ -154,6 +159,26 @@ function PaymentsPageContent() {
                       <span>Precio:</span>
                       <span className="font-semibold text-lg">
                         ${selectedPlan.price} {selectedPlan.currency}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Monedero:</span>
+                      <span>
+                        ${walletAvailable} {selectedPlan.currency}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm">Usar monedero</label>
+                      <input
+                        type="checkbox"
+                        checked={useWallet}
+                        onChange={(e) => setUseWallet(e.target.checked)}
+                      />
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total a pagar:</span>
+                      <span className="font-semibold text-lg">
+                        ${Math.max(0, (selectedPlan.price - (useWallet ? Math.min(walletAvailable, selectedPlan.price) : 0)))} {selectedPlan.currency}
                       </span>
                     </div>
                   </div>

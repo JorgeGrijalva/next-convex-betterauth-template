@@ -6,8 +6,8 @@ import {
 } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
 import { type GetServerSidePropsContext } from "next";
-import GithubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
@@ -64,23 +64,44 @@ export const authOptions: NextAuthOptions = {
   },
   adapter: PrismaAdapter(db) as Adapter,
   providers: [
-    GithubProvider({
-      clientId: env.GITHUB_CLIENT_ID!,
-      clientSecret: env.GITHUB_CLIENT_SECRET!,
+    CredentialsProvider({
+      name: "Flutv",
+      credentials: {
+        identifier: { label: "WhatsApp o Email", type: "text" },
+        password: { label: "Contraseña", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.identifier || !credentials?.password) {
+          return null;
+        }
+
+        const user = await db.user.findFirst({
+          where: {
+            OR: [
+              { whatsapp: credentials.identifier },
+              { email: credentials.identifier },
+            ],
+          },
+        });
+
+        if (!user || !user.isActive) {
+          return null;
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email || undefined,
+          image: null,
+          role: user.role,
+        } as any;
+      },
     }),
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID!,
-      clientSecret: env.GOOGLE_CLIENT_SECRET!,
-    }),
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
   ],
   pages: {
     signIn: "/sign-in",

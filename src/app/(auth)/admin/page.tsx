@@ -1,303 +1,235 @@
 "use client";
 
-import { api } from "@/utils/api";
+import { api } from "@/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
   Users, 
+  Package, 
   DollarSign, 
   TrendingUp, 
-  Clock,
-  Shield,
-  FileText,
-  Settings
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  Server
 } from "lucide-react";
-import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
-export default function AdminDashboard() {
-  const { data: session } = useSession();
-  const router = useRouter();
+export default function AdminDashboardPage() {
+  const { data: stats } = api.admin.getDashboardStats.useQuery();
+  const { data: recentPayments } = api.payments.getRecent.useQuery({ limit: 5 });
+  const { data: pendingWithdrawals } = api.affiliates.getWithdrawalRequests.useQuery({ 
+    status: "pending" 
+  });
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (session?.user && !["ADMIN", "SUPER_ADMIN", "VERIFIER"].includes(session.user.role || "")) {
-      router.push("/dashboard");
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge className="bg-yellow-600">Pendiente</Badge>;
+      case "approved":
+        return <Badge className="bg-green-600">Aprobado</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-600">Rechazado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
-  }, [session, router]);
-
-  // Queries
-  const { data: userStats, isLoading: userStatsLoading } = api.users.getStats.useQuery();
-  const { data: paymentStats, isLoading: paymentStatsLoading } = api.payments.getStats.useQuery({});
-  const { data: subscriptionStats, isLoading: subscriptionStatsLoading } = api.subscriptions.getStats.useQuery();
-  const { data: affiliateStats, isLoading: affiliateStatsLoading } = api.affiliates.getGeneralStats.useQuery();
-  const { data: pendingPayments } = api.payments.getPendingReview.useQuery();
-
-  const isLoading = userStatsLoading || paymentStatsLoading || subscriptionStatsLoading || affiliateStatsLoading;
-
-  if (!session?.user) {
-    return null;
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full p-4">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 animate-pulse rounded-lg"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const userRole = session.user.role;
-  const isVerifier = userRole === "VERIFIER";
-  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(userRole || "");
-  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  };
 
   return (
-    <div className="min-h-screen w-full p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Panel de Administración</h1>
-            <p className="text-muted-foreground">
-              Bienvenido, {session.user.name}
-              <Badge className="ml-2" variant="outline">
-                {userRole === "SUPER_ADMIN" ? "Super Admin" : 
-                 userRole === "ADMIN" ? "Administrador" : "Verificador"}
-              </Badge>
+    <div className="container mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Dashboard Administrativo</h1>
+        <p className="text-gray-400">Resumen general del sistema</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Total Usuarios</CardTitle>
+            <Users className="h-4 w-4 text-purple-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{stats?.totalUsers || 0}</div>
+            <p className="text-xs text-gray-400">
+              +{stats?.newUsersThisMonth || 0} este mes
             </p>
-          </div>
-          <Button asChild>
-            <Link href="/dashboard">
-              Panel Cliente
-            </Link>
-          </Button>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-4 mb-8">
-          {/* Users Stats */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userStats?.total || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {userStats?.newUsersThisMonth || 0} nuevos este mes
-              </p>
-            </CardContent>
-          </Card>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Suscripciones Activas</CardTitle>
+            <Package className="h-4 w-4 text-green-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{stats?.activeSubscriptions || 0}</div>
+            <p className="text-xs text-gray-400">
+              {stats?.totalSubscriptions || 0} totales
+            </p>
+          </CardContent>
+        </Card>
 
-          {/* Revenue Stats */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${paymentStats?.totalRevenue || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {paymentStats?.approved || 0} pagos aprobados
-              </p>
-            </CardContent>
-          </Card>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Ingresos del Mes</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">${stats?.monthlyRevenue || 0}</div>
+            <p className="text-xs text-gray-400">
+              {stats?.pendingPayments || 0} pagos pendientes
+            </p>
+          </CardContent>
+        </Card>
 
-          {/* Active Subscriptions */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Suscripciones Activas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{subscriptionStats?.active || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {subscriptionStats?.expiringSoon || 0} vencen pronto
-              </p>
-            </CardContent>
-          </Card>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Cuentas IPTV</CardTitle>
+            <Server className="h-4 w-4 text-purple-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{stats?.totalIptvAccounts || 0}</div>
+            <p className="text-xs text-gray-400">
+              {stats?.activeIptvAccounts || 0} activas
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Pending Payments */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pagos Pendientes</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{paymentStats?.pending || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Requieren revisión
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          {/* Payment Review - Always visible */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Revisar Pagos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {pendingPayments?.length || 0} pagos esperando revisión
-              </p>
-              <Button asChild className="w-full">
-                <Link href="/admin/payments">
-                  Revisar Pagos
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* User Management - Admin only */}
-          {isAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Gestión de Usuarios
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Administrar usuarios y permisos
-                </p>
-                <Button asChild className="w-full" variant="outline">
-                  <Link href="/admin/users">
-                    Gestionar Usuarios
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Plans Management - Admin only */}
-          {isAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Gestión de Planes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Crear y editar planes de IPTV
-                </p>
-                <Button asChild className="w-full" variant="outline">
-                  <Link href="/admin/plans">
-                    Gestionar Planes
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Admin-only features */}
-        {isAdmin && (
-          <div className="grid gap-6 md:grid-cols-2 mb-8">
-            {/* Affiliates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  Sistema de Afiliados
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">Afiliados Activos</div>
-                    <div className="text-2xl font-bold">{affiliateStats?.totalAffiliates || 0}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Payments */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Pagos Recientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentPayments?.map((payment) => (
+                <div key={payment.id} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-white">
+                      {payment.user.name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {payment.plan.name} - ${payment.amount}
+                    </p>
                   </div>
-                  <div>
-                    <div className="font-medium">Total Referidos</div>
-                    <div className="text-2xl font-bold">{affiliateStats?.totalReferrals || 0}</div>
+                  <div className="text-right">
+                    {getStatusBadge(payment.status)}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(payment.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
-                <Button asChild className="w-full mt-4" variant="outline">
-                  <Link href="/admin/affiliates">
-                    Gestionar Afiliados
-                  </Link>
-                </Button>
+              ))}
+              
+              {recentPayments?.length === 0 && (
+                <p className="text-gray-400 text-center py-4">No hay pagos recientes</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pending Withdrawals */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Solicitudes de Retiro Pendientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pendingWithdrawals?.map((withdrawal) => (
+                <div key={withdrawal.id} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-white">
+                      {withdrawal.affiliate.name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      ${withdrawal.amount} - {withdrawal.paymentMethod}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-yellow-600">Pendiente</Badge>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(withdrawal.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              {pendingWithdrawals?.length === 0 && (
+                <p className="text-gray-400 text-center py-4">No hay solicitudes pendientes</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Acciones Rápidas</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="/admin/pagos" className="block">
+            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                  <div>
+                    <p className="text-white font-medium">Revisar Pagos</p>
+                    <p className="text-gray-400 text-sm">Aprobar/Rechazar</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+          </a>
 
-            {/* Announcements */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Anuncios y Notificaciones
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Gestionar feed de anuncios y enviar notificaciones
-                </p>
-                <Button asChild className="w-full" variant="outline">
-                  <Link href="/admin/announcements">
-                    Gestionar Anuncios
-                  </Link>
-                </Button>
+          <a href="/admin/usuarios" className="block">
+            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Users className="w-8 h-8 text-blue-400" />
+                  <div>
+                    <p className="text-white font-medium">Gestionar Usuarios</p>
+                    <p className="text-gray-400 text-sm">Ver y editar</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </a>
 
-        {/* Super Admin only */}
-        {isSuperAdmin && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Configuración del Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium mb-2">Administradores</h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Gestionar cuentas de administradores
-                  </p>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/admin/administrators">
-                      Gestionar Admins
-                    </Link>
-                  </Button>
+          <a href="/admin/planes" className="block">
+            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Package className="w-8 h-8 text-purple-400" />
+                  <div>
+                    <p className="text-white font-medium">Planes</p>
+                    <p className="text-gray-400 text-sm">Crear y editar</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium mb-2">Configuración de Afiliados</h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Configurar comisiones y porcentajes
-                  </p>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/admin/affiliate-config">
-                      Configurar
-                    </Link>
-                  </Button>
+              </CardContent>
+            </Card>
+          </a>
+
+          <a href="/admin/withdrawals" className="block">
+            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-8 h-8 text-yellow-400" />
+                  <div>
+                    <p className="text-white font-medium">Retiros</p>
+                    <p className="text-gray-400 text-sm">Procesar solicitudes</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          </a>
+        </div>
       </div>
     </div>
   );

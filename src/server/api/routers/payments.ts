@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { emitWebhook } from "@/server/services/webhooks";
 
 export const paymentsRouter = createTRPCRouter({
   // Crear nuevo pago público (flujo checkout para usuarios no autenticados)
@@ -117,6 +118,7 @@ export const paymentsRouter = createTRPCRouter({
       receiptImage: z.string().optional(), // URL de la imagen
       paymentMethod: z.string().optional(),
       paidAt: z.string().optional(), // ISO string de fecha
+      walletUseAmount: z.number().min(0).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Verificar que el plan existe y está activo
@@ -131,12 +133,22 @@ export const paymentsRouter = createTRPCRouter({
         });
       }
 
-      // Verificar que el monto coincide con el precio del plan
-      if (input.amount !== plan.price) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "El monto no coincide con el precio del plan",
+      const walletUse = input.walletUseAmount || 0;
+      if (walletUse < 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Monto de monedero inválido" });
+      }
+      if (walletUse > 0) {
+        const pendingAgg = await ctx.db.affiliateCommission.aggregate({
+          where: { affiliateId: ctx.session.user.id, status: "PENDING" },
+          _sum: { amount: true },
         });
+        const available = pendingAgg._sum.amount || 0;
+        if (walletUse > available) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Saldo de monedero insuficiente" });
+        }
+      }
+      if (input.amount + walletUse !== plan.price) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Total a pagar no coincide con el precio del plan" });
       }
 
       // Crear el pago
@@ -256,6 +268,10 @@ export const paymentsRouter = createTRPCRouter({
     .input(z.object({
       paymentId: z.string(),
       reviewNotes: z.string().optional(),
+      iptvUsername: z.string().optional(),
+      iptvPassword: z.string().optional(),
+      serverUrl: z.string().url().optional(),
+      endDate: z.string().optional(), // ISO date editable por admin
     }))
     .mutation(async ({ ctx, input }) => {
       const payment = await ctx.db.payment.findUnique({
@@ -293,7 +309,7 @@ export const paymentsRouter = createTRPCRouter({
 
       // Activar suscripción
       const startDate = new Date();
-      const endDate = new Date(startDate.getTime() + (payment.plan.duration * 24 * 60 * 60 * 1000));
+      const endDate = input.endDate ? new Date(input.endDate) : new Date(startDate.getTime() + (payment.plan.duration * 24 * 60 * 60 * 1000));
 
       // Buscar suscripción existente o crear nueva
       const existingSubscription = await ctx.db.subscription.findFirst({
@@ -330,21 +346,19 @@ export const paymentsRouter = createTRPCRouter({
       });
 
       if (!existingIptvAccount) {
-        // Generar credenciales IPTV
-        const username = `iptv_${payment.user.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).substring(2, 8)}`;
-        const password = Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 4).toUpperCase();
-        
-        // Crear cuenta IPTV
+        const username = input.iptvUsername || `iptv_${payment.user.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).substring(2, 8)}`;
+        const password = input.iptvPassword || (Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 4).toUpperCase());
+
         await ctx.db.iptvAccount.create({
           data: {
             userId: payment.userId,
             username,
             password,
-            serverUrl: "http://tu-servidor-iptv.com", // Cambiar por tu servidor real
+            serverUrl: input.serverUrl || "http://servidor.xyz/c/",
             port: "8080",
             maxConnections: 2,
             profileName: payment.user.name,
-            notes: `Cuenta creada automáticamente al aprobar pago del plan ${payment.plan.name}`,
+            notes: `Cuenta creada al aprobar pago del plan ${payment.plan.name}`,
           },
         });
 
@@ -358,7 +372,7 @@ export const paymentsRouter = createTRPCRouter({
           credentials: {
             username,
             password,
-            serverUrl: "http://tu-servidor-iptv.com",
+            serverUrl: input.serverUrl || "http://servidor.xyz/c/",
             port: "8080",
           },
           subscription: {
@@ -385,7 +399,7 @@ export const paymentsRouter = createTRPCRouter({
           },
         });
 
-        if (previousPayments === 0) {
+      if (previousPayments === 0) {
           // Es su primer pago - generar comisión
           const affiliate = await ctx.db.user.findUnique({
             where: { whatsapp: payment.user.referredBy },
@@ -425,9 +439,7 @@ export const paymentsRouter = createTRPCRouter({
                 data: commissionData,
               });
 
-              // TODO: Enviar webhook a n8n
-              console.log("Webhook to n8n - Affiliate Commission:", {
-                event: "affiliate.commission",
+              await emitWebhook("affiliate.commission", {
                 affiliate_user: {
                   name: affiliate.name,
                   whatsapp: affiliate.whatsapp,
@@ -443,8 +455,7 @@ export const paymentsRouter = createTRPCRouter({
       }
 
       // TODO: Enviar webhook a n8n
-      console.log("Webhook to n8n - Payment Approved:", {
-        event: "payment.approved",
+      await emitWebhook("payment.approved", {
         user: {
           name: payment.user.name,
           whatsapp: payment.user.whatsapp,
@@ -501,8 +512,7 @@ export const paymentsRouter = createTRPCRouter({
       });
 
       // TODO: Enviar webhook a n8n
-      console.log("Webhook to n8n - Payment Rejected:", {
-        event: "payment.rejected",
+      await emitWebhook("payment.rejected", {
         user: {
           name: payment.user.name,
           whatsapp: payment.user.whatsapp,
@@ -557,3 +567,30 @@ export const paymentsRouter = createTRPCRouter({
       };
     }),
 });
+      // Si se usa monedero, descontar comisiones pendientes
+      if (walletUse > 0) {
+        let remaining = walletUse;
+        const pending = await ctx.db.affiliateCommission.findMany({
+          where: { affiliateId: ctx.session.user.id, status: "PENDING" },
+          orderBy: { createdAt: "asc" },
+        });
+        for (const c of pending) {
+          const amt = c.amount || 0;
+          if (amt <= 0) continue;
+          if (remaining <= 0) break;
+          const toPay = Math.min(amt, remaining);
+          await ctx.db.affiliateCommission.update({
+            where: { id: c.id },
+            data: { status: "PAID", paidAt: new Date() },
+          });
+          remaining -= toPay;
+        }
+        await ctx.db.walletTransaction.create({
+          data: {
+            userId: ctx.session.user.id,
+            type: "PURCHASE",
+            amount: walletUse,
+            description: `Uso de monedero para plan ${plan.name}`,
+          },
+        });
+      }

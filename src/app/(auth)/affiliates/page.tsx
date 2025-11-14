@@ -23,6 +23,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AffiliatesPage() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawClabe, setWithdrawClabe] = useState("");
+  const [withdrawBank, setWithdrawBank] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Queries
@@ -71,9 +73,20 @@ export default function AffiliatesPage() {
       return;
     }
 
+    if (withdrawClabe.length !== 18) {
+      alert("CLABE debe tener 18 dígitos");
+      return;
+    }
+    if (!withdrawBank) {
+      alert("Ingresa el banco");
+      return;
+    }
+
     try {
       await requestWithdraw.mutateAsync({
         amount,
+        clabe: withdrawClabe,
+        bank: withdrawBank,
         notes: `Retiro de comisiones por afiliado`,
       });
     } catch (error) {
@@ -236,9 +249,9 @@ export default function AffiliatesPage() {
                 <CardTitle>Solicitar Retiro</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Monto a retirar</label>
-                  <div className="flex gap-2 mt-2">
+                <div className="grid gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Monto a retirar</label>
                     <Input
                       type="number"
                       placeholder="0.00"
@@ -246,16 +259,39 @@ export default function AffiliatesPage() {
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       min="1"
                       max={stats?.pendingCommissions || 0}
+                      className="mt-2"
                     />
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Disponible: ${stats?.pendingCommissions || 0}
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">CLABE Interbancaria (18 dígitos)</label>
+                      <Input
+                        placeholder="XXXXXXXXXXXXXXXXXX"
+                        value={withdrawClabe}
+                        onChange={(e) => setWithdrawClabe(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Banco</label>
+                      <Input
+                        placeholder="Nombre del banco"
+                        value={withdrawBank}
+                        onChange={(e) => setWithdrawBank(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+                  <div>
                     <Button 
                       onClick={handleWithdraw}
                       disabled={!withdrawAmount || requestWithdraw.isPending || (stats?.pendingCommissions || 0) <= 0}
                     >
                       {requestWithdraw.isPending ? "Procesando..." : "Solicitar"}
                     </Button>
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    Disponible: ${stats?.pendingCommissions || 0}
                   </div>
                 </div>
 

@@ -55,6 +55,10 @@ interface Payment {
 export default function PaymentReviewPage() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [iptvUsername, setIptvUsername] = useState("");
+  const [iptvPassword, setIptvPassword] = useState("");
+  const [serverUrl, setServerUrl] = useState("http://servidor.xyz/c/");
+  const [endDate, setEndDate] = useState<string>("");
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
 
   // Queries
@@ -87,6 +91,10 @@ export default function PaymentReviewPage() {
       await approvePayment.mutateAsync({
         paymentId,
         reviewNotes: reviewNotes || undefined,
+        iptvUsername: iptvUsername || undefined,
+        iptvPassword: iptvPassword || undefined,
+        serverUrl: serverUrl || undefined,
+        endDate: endDate || undefined,
       });
       alert("Pago aprobado exitosamente");
     } catch (error) {
@@ -306,16 +314,54 @@ export default function PaymentReviewPage() {
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
-                              <div>
-                                <label className="text-sm font-medium">
-                                  Notas de revisión (opcional)
-                                </label>
-                                <Textarea
-                                  value={reviewNotes}
-                                  onChange={(e) => setReviewNotes(e.target.value)}
-                                  placeholder="Agrega una nota sobre esta revisión..."
-                                  className="mt-2"
-                                />
+                              <div className="grid gap-4">
+                                <div>
+                                  <label className="text-sm font-medium">Notas de revisión (opcional)</label>
+                                  <Textarea
+                                    value={reviewNotes}
+                                    onChange={(e) => setReviewNotes(e.target.value)}
+                                    placeholder="Agrega una nota sobre esta revisión..."
+                                    className="mt-2"
+                                  />
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="text-sm font-medium">Usuario IPTV</label>
+                                    <Input
+                                      value={iptvUsername}
+                                      onChange={(e) => setIptvUsername(e.target.value)}
+                                      placeholder="usuario_iptv_123"
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Contraseña IPTV</label>
+                                    <Input
+                                      value={iptvPassword}
+                                      onChange={(e) => setIptvPassword(e.target.value)}
+                                      placeholder="pass_secreto_456"
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">URL Servidor (M3U)</label>
+                                    <Input
+                                      value={serverUrl}
+                                      onChange={(e) => setServerUrl(e.target.value)}
+                                      placeholder="http://servidor.xyz/c/"
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Vigencia (fecha fin)</label>
+                                    <Input
+                                      type="date"
+                                      value={endDate}
+                                      onChange={(e) => setEndDate(e.target.value)}
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                </div>
                               </div>
                               
                               <div className="flex gap-2 pt-4">

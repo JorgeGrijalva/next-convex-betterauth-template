@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/server/api/trpc";
+import { emitWebhook } from "@/server/services/webhooks";
 
 export const affiliatesRouter = createTRPCRouter({
   // Obtener estadísticas del afiliado actual
@@ -136,6 +137,8 @@ export const affiliatesRouter = createTRPCRouter({
   requestWithdraw: protectedProcedure
     .input(z.object({
       amount: z.number().positive(),
+      clabe: z.string().min(18).max(18),
+      bank: z.string().min(2),
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -154,23 +157,29 @@ export const affiliatesRouter = createTRPCRouter({
         throw new Error(`Saldo insuficiente. Disponible: $${availableAmount}`);
       }
 
-      // Por simplicidad, marcamos las comisiones como "solicitadas"
-      // En un sistema real, podrías crear una tabla de "WithdrawalRequests"
-      
-      // TODO: Implementar sistema de retiros más robusto
-      // Por ahora solo registramos la solicitud en logs
-      
-      console.log("Withdraw Request:", {
-        userId: ctx.session.user.id,
+      const req = await ctx.db.withdrawalRequest.create({
+        data: {
+          affiliateId: ctx.session.user.id,
+          amount: input.amount,
+          clabe: input.clabe,
+          bank: input.bank,
+          status: "PENDING",
+        },
+      });
+
+      await emitWebhook("affiliate.withdrawal_request", {
+        affiliateId: ctx.session.user.id,
         amount: input.amount,
-        notes: input.notes,
-        timestamp: new Date().toISOString(),
+        clabe: input.clabe,
+        bank: input.bank,
+        requestId: req.id,
       });
 
       return {
         success: true,
         message: "Solicitud de retiro enviada. Será procesada en 1-2 días hábiles.",
         requestedAmount: input.amount,
+        requestId: req.id,
       };
     }),
 
@@ -301,8 +310,9 @@ export const affiliatesRouter = createTRPCRouter({
   payCommissions: adminProcedure
     .input(z.object({
       affiliateId: z.string(),
-      commissionIds: z.array(z.string()).optional(), // Si no se especifica, pagar todas las pendientes
+      commissionIds: z.array(z.string()).optional(),
       notes: z.string().optional(),
+      withdrawalRequestId: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const where: any = {
@@ -337,9 +347,23 @@ export const affiliatesRouter = createTRPCRouter({
       });
 
       if (affiliate) {
-        // TODO: Enviar notificación
-        console.log("Webhook to n8n - Commissions Paid:", {
-          event: "affiliate.commissions_paid",
+        if (input.withdrawalRequestId) {
+          await ctx.db.withdrawalRequest.update({
+            where: { id: input.withdrawalRequestId },
+            data: { status: "PAID", paidAt: new Date() },
+          });
+        }
+
+        await ctx.db.walletTransaction.create({
+          data: {
+            userId: affiliate.id,
+            type: "WITHDRAWAL",
+            amount: totalPaid,
+            description: `Pago de ${updated.count} comisiones`,
+          },
+        });
+
+        await emitWebhook("affiliate.commissions_paid", {
           affiliate: {
             name: affiliate.name,
             whatsapp: affiliate.whatsapp,

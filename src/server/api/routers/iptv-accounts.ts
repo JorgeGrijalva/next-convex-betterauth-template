@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { emitWebhook } from "@/server/services/webhooks";
 
 // Función para generar username único
 function generateIptvUsername(name: string): string {
@@ -193,8 +194,7 @@ export const iptvAccountsRouter = createTRPCRouter({
       });
 
       // TODO: Enviar nueva contraseña por WhatsApp
-      console.log("Webhook to n8n - Password Reset:", {
-        event: "iptv.password_reset",
+      await emitWebhook("iptv.password_reset", {
         user: {
           name: account.user.name,
           whatsapp: account.user.whatsapp,

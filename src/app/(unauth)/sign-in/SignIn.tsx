@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Github, Chrome, CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function SignIn() {
   // State management
@@ -20,29 +22,27 @@ export default function SignIn() {
     setSuccess("");
   };
 
-  // Social Sign In (GitHub)
-  const handleGitHubSignIn = async () => {
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleCredentialsSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     clearMessages();
-
     try {
-      await signIn("github", { callbackUrl: "/dashboard" });
+      const res = await signIn("credentials", {
+        redirect: false,
+        identifier,
+        password,
+      });
+      if (res?.ok) {
+        setSuccess("Inicio de sesión exitoso");
+        window.location.href = "/dashboard";
+      } else {
+        setError("Credenciales inválidas");
+      }
     } catch (err) {
-      setError("GitHub sign in failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Social Sign In (Google)
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    clearMessages();
-
-    try {
-      await signIn("google", { callbackUrl: "/dashboard" });
-    } catch (err) {
-      setError("Google sign in failed");
+      setError("Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
@@ -78,28 +78,34 @@ export default function SignIn() {
             </Alert>
           )}
 
-          {/* Social Sign In Buttons */}
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGitHubSignIn}
-              disabled={loading}
-            >
-              <Github className="w-4 h-4 mr-2" />
-              Continuar con GitHub
+          <form className="space-y-4" onSubmit={handleCredentialsSignIn}>
+            <div>
+              <Label htmlFor="identifier">WhatsApp o Email</Label>
+              <Input
+                id="identifier"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="+52XXXXXXXXXX o nombre@correo.com"
+                required
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tu contraseña"
+                required
+                className="mt-2"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Ingresando..." : "Iniciar sesión"}
             </Button>
-
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-            >
-              <Chrome className="w-4 h-4 mr-2" />
-              Continuar con Google
-            </Button>
-          </div>
+          </form>
 
           {/* Links */}
           <div className="text-center space-y-2">
@@ -107,6 +113,11 @@ export default function SignIn() {
               ¿No tienes cuenta?{" "}
               <Link href="/sign-up" className="text-primary hover:underline">
                 Crea una cuenta
+              </Link>
+            </p>
+            <p className="text-sm">
+              <Link href="/reset-password" className="hover:underline">
+                ¿Olvidaste tu contraseña?
               </Link>
             </p>
           </div>

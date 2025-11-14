@@ -302,3 +302,34 @@ model AffiliateStats {
   
   @@index([userId])
 }
+
+// Solicitudes de retiro de monedero
+model WithdrawalRequest {
+  id        String   @id @default(cuid())
+  affiliateId String
+  amount    Float
+  clabe     String
+  bank      String
+  status    String   @default("PENDING") // PENDING, PAID, CANCELLED
+  createdAt DateTime @default(now())
+  paidAt    DateTime?
+
+  affiliate User     @relation(fields: [affiliateId], references: [id])
+
+  @@index([affiliateId])
+  @@index([status])
+}
+
+// Transacciones del monedero (comisiones, retiros, compras internas)
+model WalletTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // COMMISSION, WITHDRAWAL, PURCHASE
+  amount    Float
+  description String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
