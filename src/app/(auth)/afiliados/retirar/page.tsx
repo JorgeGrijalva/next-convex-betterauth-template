@@ -187,7 +187,7 @@ export default function WithdrawalRequestPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {withdrawals?.withdrawals?.map((withdrawal: WithdrawalRequest) => (
+            {withdrawals?.withdrawals?.map((withdrawal) => (
               <div key={withdrawal.id} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                 <div>
                   <p className="text-white font-medium">${withdrawal.amount}</p>

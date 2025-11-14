@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,20 +21,38 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const { data: userDashboard } = api.users.getDashboard.useQuery();
   const { data: affiliateStats } = api.affiliates.getMyStats.useQuery();
 
-  if (!session?.user) {
-    router.push("/sign-in");
-    return null;
-  }
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/sign-in");
+    }
+  }, [status, router]);
 
   const handleSignOut = async () => {
     await signOut();
     router.push("/sign-in");
   };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse mb-4">
+            <div className="text-3xl font-bold text-purple-400">Flutv</div>
+          </div>
+          <p className="text-slate-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated" || !session?.user) {
+    return null;
+  }
 
   const subscription = userDashboard?.subscription;
   const totalPayments = userDashboard?.recentPayments?.length || 0;

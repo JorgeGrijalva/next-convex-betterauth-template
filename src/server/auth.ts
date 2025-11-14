@@ -119,9 +119,20 @@ export const authOptions: NextAuthOptions = {
  *
  * @see https://next-auth.js.org/configuration/nextjs
  */
-export const getServerAuthSession = (ctx: {
-  req: GetServerSidePropsContext["req"];
-  res: GetServerSidePropsContext["res"];
+export const getServerAuthSession = async (ctx: {
+  req: GetServerSidePropsContext["req"] | Request;
+  res?: GetServerSidePropsContext["res"] | { setHeader?: Function; end?: Function };
 }) => {
-  return getServerSession(ctx.req, ctx.res, authOptions);
+  // For App Router with fetch adapter where res is undefined
+  if (!ctx.res) {
+    // Create a minimal response object that satisfies NextAuth's requirements
+    const minimalRes = {
+      setHeader: () => {},
+      getHeader: () => undefined,
+      end: () => {},
+    };
+    return getServerSession(ctx.req as any, minimalRes as any, authOptions);
+  }
+  
+  return getServerSession(ctx.req as any, ctx.res as any, authOptions);
 };

@@ -103,13 +103,13 @@ export const AppHeader = ({ children }: PropsWithChildren) => {
                 </div>
 
                 <DrawerFooter>
-                  <a href="/signin" className="w-full text-center px-4 py-2 rounded-md bg-primary text-primary-foreground">Iniciar sesión</a>
+                  <a href="/sign-in" className="w-full text-center px-4 py-2 rounded-md bg-primary text-primary-foreground">Iniciar sesión</a>
                 </DrawerFooter>
               </DrawerContent>
             </Drawer>
           </div>
 
-          <a href="/signin" className="hidden md:inline-block px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:opacity-95">Iniciar sesión</a>
+          <a href="/sign-in" className="hidden md:inline-block px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:opacity-95">Iniciar sesión</a>
         </div>
       </div>
       {children}

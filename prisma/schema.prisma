@@ -89,6 +89,8 @@ model User {
   earnedCommissions AffiliateCommission[] @relation("ReferredCommissions")
   passwordResets    PasswordReset[]
   iptvAccount       IptvAccount?
+  withdrawalRequests WithdrawalRequest[]
+  walletTransactions WalletTransaction[]
   
   @@index([whatsapp])
   @@index([referralCode])

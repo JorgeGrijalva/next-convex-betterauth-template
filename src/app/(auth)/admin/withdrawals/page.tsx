@@ -123,7 +123,7 @@ export default function AdminWithdrawalsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {withdrawalsData?.withdrawals?.map((withdrawal: WithdrawalRequest) => (
+            {withdrawalsData?.withdrawals?.map((withdrawal) => (
               <TableRow key={withdrawal.id} className="border-gray-700 hover:bg-gray-700/50">
                 <TableCell>
                   <div>
