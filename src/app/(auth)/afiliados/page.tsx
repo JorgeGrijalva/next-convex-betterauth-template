@@ -14,6 +14,7 @@ import {
   Clock,
   CheckCircle,
   UserPlus,
+  User,
   Copy,
   LinkIcon,
   ArrowUpRight
@@ -181,12 +182,12 @@ export default function Afiliados() {
         )}
 
         {/* Withdrawal Button */}
-        {stats && stats.balance > 0 && (
+        {stats && stats.pendingCommissions > 0 && (
           <div className="mb-8 text-center">
             <Link href="/afiliados/retirar">
               <Button className="bg-green-600 hover:bg-green-700 text-white">
                 <ArrowUpRight className="w-4 h-4 mr-2" />
-                Retirar Comisiones (${stats.balance})
+                Retirar Comisiones (${stats.pendingCommissions})
               </Button>
             </Link>
           </div>

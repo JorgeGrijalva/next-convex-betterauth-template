@@ -493,4 +493,30 @@ export const affiliatesRouter = createTRPCRouter({
         },
       });
     }),
+
+  // Obtener mis solicitudes de retiro (usuario)
+  getMyWithdrawals: protectedProcedure
+    .input(z.object({
+      limit: z.number().default(20),
+      offset: z.number().default(0),
+    }))
+    .query(async ({ ctx, input }) => {
+      const [withdrawals, total] = await Promise.all([
+        ctx.db.withdrawalRequest.findMany({
+          where: { affiliateId: ctx.session.user.id },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          skip: input.offset,
+        }),
+        ctx.db.withdrawalRequest.count({
+          where: { affiliateId: ctx.session.user.id },
+        }),
+      ]);
+
+      return {
+        withdrawals,
+        total,
+        hasMore: input.offset + input.limit < total,
+      };
+    }),
 });

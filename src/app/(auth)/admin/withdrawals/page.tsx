@@ -21,6 +21,21 @@ import {
 } from "@/components/ui/select";
 import { DollarSign, User, Calendar, Clock } from "lucide-react";
 
+interface WithdrawalRequest {
+  id: string;
+  amount: number;
+  clabe: string;
+  bank: string;
+  status: "PENDING" | "PAID" | "CANCELLED";
+  createdAt: Date;
+  affiliate: {
+    id: string;
+    name: string;
+    whatsapp: string;
+    email: string;
+  };
+}
+
 export default function AdminWithdrawalsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -108,7 +123,7 @@ export default function AdminWithdrawalsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {withdrawalsData?.withdrawals?.map((withdrawal) => (
+            {withdrawalsData?.withdrawals?.map((withdrawal: WithdrawalRequest) => (
               <TableRow key={withdrawal.id} className="border-gray-700 hover:bg-gray-700/50">
                 <TableCell>
                   <div>

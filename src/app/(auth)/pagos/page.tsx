@@ -14,7 +14,8 @@ import {
   DollarSign,
   Calendar,
   User,
-  Eye
+  Eye,
+  Hash
 } from "lucide-react";
 
 export default function Pagos() {

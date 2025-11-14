@@ -17,33 +17,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Clock, AlertCircle, Send } from "lucide-react";
 
+interface WithdrawalRequest {
+  id: string;
+  amount: number;
+  clabe: string;
+  bank: string;
+  status: "PENDING" | "PAID" | "CANCELLED";
+  createdAt: Date;
+}
+
 export default function WithdrawalRequestPage() {
   const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [paymentDetails, setPaymentDetails] = useState("");
+  const [clabe, setClabe] = useState("");
+  const [bank, setBank] = useState("");
 
   const { data: stats } = api.affiliates.getMyStats.useQuery();
-  const { data: withdrawals } = api.affiliates.getMyWithdrawals.useQuery();
+  const { data: withdrawals } = api.affiliates.getMyWithdrawals.useQuery({});
   const utils = api.useUtils();
 
-  const requestWithdrawal = api.affiliates.requestWithdrawal.useMutation({
+  const requestWithdrawal = api.affiliates.requestWithdraw.useMutation({
     onSuccess: () => {
       utils.affiliates.getMyStats.invalidate();
       utils.affiliates.getMyWithdrawals.invalidate();
       setAmount("");
-      setPaymentMethod("");
-      setPaymentDetails("");
+      setBank("");
+      setClabe("");
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !paymentMethod || !paymentDetails) return;
+    if (!amount || !clabe || !bank) return;
 
     requestWithdrawal.mutate({
       amount: parseFloat(amount),
-      paymentMethod,
-      paymentDetails,
+      clabe,
+      bank,
     });
   };
 
@@ -60,7 +69,7 @@ export default function WithdrawalRequestPage() {
     }
   };
 
-  const canWithdraw = (stats?.balance || 0) >= (stats?.minimumWithdrawal || 50);
+  const canWithdraw = (stats?.pendingCommissions || 0) >= 50;
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -82,21 +91,21 @@ export default function WithdrawalRequestPage() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-3xl font-bold text-white">${stats?.balance || 0}</p>
-              <p className="text-gray-400">Comisión disponible</p>
+              <div>
+                <p className="text-3xl font-bold text-white">${stats?.pendingCommissions || 0}</p>
+                <p className="text-gray-400">Comisión disponible</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Retiro mínimo</p>
+                <p className="text-lg font-semibold text-white">$50</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Retiro mínimo</p>
-              <p className="text-lg font-semibold text-white">${stats?.minimumWithdrawal || 50}</p>
-            </div>
-          </div>
           
           {!canWithdraw && (
             <div className="flex items-center gap-2 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg">
               <AlertCircle className="w-5 h-5 text-yellow-400" />
               <p className="text-yellow-400 text-sm">
-                Necesitas al menos ${stats?.minimumWithdrawal || 50} para solicitar un retiro
+                Necesitas al menos $50 para solicitar un retiro
               </p>
             </div>
           )}
@@ -120,40 +129,38 @@ export default function WithdrawalRequestPage() {
                   id="amount"
                   type="number"
                   step="0.01"
-                  min={stats?.minimumWithdrawal || 50}
-                  max={stats?.balance || 0}
+                  min={50}
+                  max={stats?.pendingCommissions || 0}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="bg-gray-700 border-gray-600 text-white"
-                  placeholder={`Mínimo: $${stats?.minimumWithdrawal || 50}`}
+                  placeholder={`Mínimo: $50`}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="paymentMethod" className="text-white">Método de Pago</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod} required>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                    <SelectValue placeholder="Selecciona un método" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="paypal">PayPal</SelectItem>
-                    <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
-                    <SelectItem value="crypto">Criptomoneda</SelectItem>
-                    <SelectItem value="other">Otro</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="bank" className="text-white">Banco</Label>
+                <Input
+                  id="bank"
+                  value={bank}
+                  onChange={(e) => setBank(e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white"
+                  placeholder="Nombre del banco"
+                  required
+                />
               </div>
 
               <div>
-                <Label htmlFor="paymentDetails" className="text-white">Detalles de Pago</Label>
-                <Textarea
-                  id="paymentDetails"
-                  value={paymentDetails}
-                  onChange={(e) => setPaymentDetails(e.target.value)}
+                <Label htmlFor="clabe" className="text-white">Número de Cuenta CLABE</Label>
+                <Input
+                  id="clabe"
+                  value={clabe}
+                  onChange={(e) => setClabe(e.target.value)}
                   className="bg-gray-700 border-gray-600 text-white"
-                  placeholder="Ingresa los detalles según el método elegido (ej: email de PayPal, número de cuenta, etc.)"
-                  rows={3}
+                  placeholder="18 dígitos de CLABE"
+                  maxLength={18}
+                  minLength={18}
                   required
                 />
               </div>
@@ -180,11 +187,11 @@ export default function WithdrawalRequestPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {withdrawals?.map((withdrawal) => (
+            {withdrawals?.withdrawals?.map((withdrawal: WithdrawalRequest) => (
               <div key={withdrawal.id} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                 <div>
                   <p className="text-white font-medium">${withdrawal.amount}</p>
-                  <p className="text-gray-400 text-sm">{withdrawal.paymentMethod}</p>
+                  <p className="text-gray-400 text-sm">{withdrawal.bank} - {withdrawal.clabe}</p>
                 </div>
                 <div className="text-right">
                   {getStatusBadge(withdrawal.status)}
@@ -195,7 +202,7 @@ export default function WithdrawalRequestPage() {
               </div>
             ))}
             
-            {withdrawals?.length === 0 && (
+            {withdrawals?.withdrawals?.length === 0 && (
               <p className="text-gray-400 text-center py-4">No has realizado retiros aún</p>
             )}
           </div>

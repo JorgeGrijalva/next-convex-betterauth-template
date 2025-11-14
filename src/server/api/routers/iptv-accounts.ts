@@ -35,6 +35,7 @@ export const iptvAccountsRouter = createTRPCRouter({
           isActive: true,
           maxConnections: true,
           profileName: true,
+          notes: true,
           createdAt: true,
           lastUsed: true,
         },
