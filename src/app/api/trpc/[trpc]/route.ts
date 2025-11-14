@@ -1,10 +1,10 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
 
 import { env } from "@/env";
 import { appRouter } from "@/server/api/root";
-import { createInnerTRPCContext } from "@/server/api/trpc";
+import { authOptions } from "@/server/auth";
 import { db } from "@/server/db";
 
 /**
@@ -12,38 +12,12 @@ import { db } from "@/server/db";
  * handling a HTTP request (e.g. when you make requests from Client Components).
  */
 const createContext = async (req: NextRequest) => {
-  // Get JWT token from cookies
-  const token = await getToken({
-    req: req as any,
-    secret: env.NEXTAUTH_SECRET,
-  });
-
-  let session = null;
+  const session = await getServerSession(authOptions);
   
-  if (token) {
-    // Get full user data from database
-    const user = await db.user.findUnique({
-      where: { id: token.sub! },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        role: true,
-      },
-    });
-
-    if (user) {
-      session = {
-        user,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      };
-    }
-  }
-
-  return createInnerTRPCContext({
+  return {
     session,
-  });
+    db,
+  };
 };
 
 const handler = async (req: NextRequest) =>
