@@ -37,15 +37,20 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Dashboard Administrativo</h1>
-        <p className="text-gray-400">Resumen general del sistema</p>
+    <div className="w-full h-full">
+      {/* Header */}
+      <div className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="px-6 py-4">
+          <h1 className="text-2xl font-bold text-white">Dashboard Administrativo</h1>
+          <p className="text-slate-400 text-sm mt-1">Resumen general del sistema</p>
+        </div>
       </div>
 
+      <div className="p-6">
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gray-800 border-gray-700">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-slate-900 border-slate-800 hover:border-purple-500/50 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Total Usuarios</CardTitle>
             <Users className="h-4 w-4 text-purple-400" />
@@ -58,9 +63,9 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-slate-900 border-slate-800 hover:border-green-500/50 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Suscripciones Activas</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Suscripciones Activas</CardTitle>
             <Package className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
@@ -71,9 +76,9 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-slate-900 border-slate-800 hover:border-blue-500/50 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Ingresos del Mes</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Ingresos del Mes</CardTitle>
             <DollarSign className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
@@ -84,9 +89,9 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-slate-900 border-slate-800 hover:border-purple-500/50 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Cuentas IPTV</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Cuentas IPTV</CardTitle>
             <Server className="h-4 w-4 text-purple-400" />
           </CardHeader>
           <CardContent>
@@ -98,9 +103,9 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Recent Payments */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <DollarSign className="w-5 h-5" />
@@ -136,7 +141,7 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Pending Withdrawals */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Clock className="w-5 h-5" />
@@ -168,11 +173,11 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-3">Acciones Rápidas</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <a href="/admin/pagos" className="block">
-            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+            <Card className="bg-slate-900 border-slate-800 hover:border-green-500/50 hover:bg-slate-800 transition-all cursor-pointer group">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <CheckCircle className="w-8 h-8 text-green-400" />
@@ -186,7 +191,7 @@ export default function AdminDashboardPage() {
           </a>
 
           <a href="/admin/usuarios" className="block">
-            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+            <Card className="bg-slate-900 border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all cursor-pointer group">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Users className="w-8 h-8 text-blue-400" />
@@ -200,7 +205,7 @@ export default function AdminDashboardPage() {
           </a>
 
           <a href="/admin/planes" className="block">
-            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+            <Card className="bg-slate-900 border-slate-800 hover:border-purple-500/50 hover:bg-slate-800 transition-all cursor-pointer group">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Package className="w-8 h-8 text-purple-400" />
@@ -214,7 +219,7 @@ export default function AdminDashboardPage() {
           </a>
 
           <a href="/admin/withdrawals" className="block">
-            <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
+            <Card className="bg-slate-900 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800 transition-all cursor-pointer group">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-8 h-8 text-yellow-400" />
@@ -227,6 +232,7 @@ export default function AdminDashboardPage() {
             </Card>
           </a>
         </div>
+      </div>
       </div>
     </div>
   );

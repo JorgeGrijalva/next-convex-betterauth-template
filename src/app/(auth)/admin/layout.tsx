@@ -42,7 +42,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div className="fixed inset-0 flex bg-slate-950">
       <AdminNav />
       <main className="flex-1 overflow-y-auto">
         {children}
