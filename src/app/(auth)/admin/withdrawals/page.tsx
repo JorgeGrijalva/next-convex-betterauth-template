@@ -26,13 +26,13 @@ interface WithdrawalRequest {
   amount: number;
   clabe: string;
   bank: string;
-  status: "PENDING" | "PAID" | "CANCELLED";
+  status: string;
   createdAt: Date;
   affiliate: {
     id: string;
     name: string;
     whatsapp: string;
-    email: string;
+    email: string | null;
   };
 }
 

@@ -23,7 +23,7 @@ const adminNavItems = [
   },
   {
     title: "Pagos",
-    href: "/admin/pagos",
+    href: "/admin/payments",
     icon: DollarSign,
   },
   {

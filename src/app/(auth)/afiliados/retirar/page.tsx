@@ -22,7 +22,7 @@ interface WithdrawalRequest {
   amount: number;
   clabe: string;
   bank: string;
-  status: "PENDING" | "PAID" | "CANCELLED";
+  status: string;
   createdAt: Date;
 }
 

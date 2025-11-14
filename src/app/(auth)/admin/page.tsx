@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-white mb-4">Acciones Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/admin/pagos" className="block">
+          <a href="/admin/payments" className="block">
             <Card className="bg-gray-800 border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">

@@ -62,7 +62,7 @@ export const AppHeader = ({ children }: PropsWithChildren) => {
 
           <nav className="hidden md:flex items-center gap-6 ml-6 text-sm text-muted-foreground">
             <a href="/" className="hover:underline">Inicio</a>
-            <a href="/plans" className="hover:underline">Planes</a>
+            <a href="/planes" className="hover:underline">Planes</a>
             <a href="/support" className="hover:underline">Soporte</a>
             <a href="/dashboard" className="hover:underline">Dashboard</a>
           </nav>
@@ -97,7 +97,7 @@ export const AppHeader = ({ children }: PropsWithChildren) => {
 
                 <div className="p-4 space-y-4">
                   <a href="/" className="block text-lg">Inicio</a>
-                  <a href="/plans" className="block text-lg">Planes</a>
+                  <a href="/planes" className="block text-lg">Planes</a>
                   <a href="/support" className="block text-lg">Soporte</a>
                   <a href="/dashboard" className="block text-lg">Dashboard</a>
                 </div>

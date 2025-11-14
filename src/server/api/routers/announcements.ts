@@ -237,4 +237,21 @@ export const announcementsRouter = createTRPCRouter({
         total,
       };
     }),
+
+  // Obtener anuncios activos (alias para getFeed)
+  getActive: protectedProcedure
+    .query(async ({ ctx }) => {
+      return ctx.db.announcementFeed.findMany({
+        where: { isPublished: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          imageUrl: true,
+          createdAt: true,
+        },
+      });
+    }),
 });

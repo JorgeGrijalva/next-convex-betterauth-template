@@ -109,7 +109,7 @@ export default function FeedPage() {
           <h3 className="text-lg font-semibold mb-4 text-center">Enlaces Útiles</h3>
           <div className="grid md:grid-cols-3 gap-4">
             <Button variant="outline" asChild className="h-auto p-4">
-              <Link href="/plans" className="flex flex-col items-center gap-2">
+              <Link href="/planes" className="flex flex-col items-center gap-2">
                 <div className="font-medium">Ver Planes</div>
                 <div className="text-xs text-muted-foreground text-center">
                   Explora nuestros planes de IPTV
@@ -118,7 +118,7 @@ export default function FeedPage() {
             </Button>
 
             <Button variant="outline" asChild className="h-auto p-4">
-              <Link href="/payments" className="flex flex-col items-center gap-2">
+              <Link href="/pagos" className="flex flex-col items-center gap-2">
                 <div className="font-medium">Realizar Pago</div>
                 <div className="text-xs text-muted-foreground text-center">
                   Sube tu comprobante de pago
@@ -127,7 +127,7 @@ export default function FeedPage() {
             </Button>
 
             <Button variant="outline" asChild className="h-auto p-4">
-              <Link href="/affiliates" className="flex flex-col items-center gap-2">
+              <Link href="/afiliados" className="flex flex-col items-center gap-2">
                 <div className="font-medium">Programa de Afiliados</div>
                 <div className="text-xs text-muted-foreground text-center">
                   Gana dinero refiriendo usuarios
