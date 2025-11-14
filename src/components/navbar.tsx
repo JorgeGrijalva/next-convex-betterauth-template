@@ -23,6 +23,10 @@ export function Navbar() {
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  if (pathname && pathname.startsWith("/admin")) {
+    return null;
+  }
+
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
   const navItems = [

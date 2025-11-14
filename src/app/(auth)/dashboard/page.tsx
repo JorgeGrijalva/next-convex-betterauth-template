@@ -78,42 +78,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-2xl font-bold text-purple-400">
-                Flutv
-              </Link>
-              <nav className="hidden md:flex items-center gap-6">
-                <Link href="/planes" className="text-slate-300 hover:text-white transition-colors">
-                  Planes
-                </Link>
-                <Link href="/pagos" className="text-slate-300 hover:text-white transition-colors">
-                  Mis Pagos
-                </Link>
-                <Link href="/afiliados" className="text-slate-300 hover:text-white transition-colors">
-                  Afiliados
-                </Link>
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden md:block">
-                <div className="text-sm font-medium text-white">{session.user.name}</div>
-                <div className="text-xs text-slate-400">
-                  {session.user.role === "ADMIN" ? "Administrador" : 
-                   session.user.role === "VERIFIER" ? "Verificador" : "Cliente"}
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-slate-300 hover:text-white">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
         {/* Announcements Feed */}
         <AnnouncementsFeed />

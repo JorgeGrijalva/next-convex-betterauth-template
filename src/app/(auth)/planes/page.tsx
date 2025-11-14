@@ -21,27 +21,6 @@ export default function Planes() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold text-purple-400">
-              Flutv
-            </Link>
-            <nav className="flex items-center gap-6">
-              <Link href="/" className="text-slate-300 hover:text-white transition-colors">
-                Inicio
-              </Link>
-              {session && (
-                <Link href="/dashboard" className="text-slate-300 hover:text-white transition-colors">
-                  Dashboard
-                </Link>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">

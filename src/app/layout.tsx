@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/next-theme/theme-provider";
 import { Footer } from "@/components/footer";
 import { TRPCReactProvider } from "@/components/providers/trpc-provider";
 import { SessionProviderWrapper } from "@/components/providers/session-provider";
-import { AppHeader } from "@/components/server";
+import { Navbar } from "@/components/navbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} min-h-[calc(100vh-2rem)] flex flex-col gap-4 antialiased`}
+        className={`${inter.variable} min-h-[calc(100vh-2rem)] flex flex-col antialiased bg-slate-900`}
       >
          <ThemeProvider
             attribute="class"
@@ -35,7 +35,7 @@ export default function RootLayout({
           >
             <TRPCReactProvider>
               <SessionProviderWrapper>
-                <AppHeader />
+                <Navbar />
                 <main className="w-full max-w-6xl mx-auto px-4 md:px-6 grow flex flex-col">
                   {children}
                 </main>
