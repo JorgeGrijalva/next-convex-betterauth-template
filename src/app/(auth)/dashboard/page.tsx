@@ -9,6 +9,7 @@ import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnnouncementsFeed } from "@/components/announcements-feed";
+import { ProtectedRoute } from "@/components/protected-route";
 import { 
   Play, 
   CreditCard, 
@@ -21,8 +22,7 @@ import {
   UserPlus
 } from "lucide-react";
 
-export default function Dashboard() {
-  const { data: session, status } = useSession();
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { data: userDashboard } = api.users.getDashboard.useQuery(undefined, {
@@ -31,27 +31,6 @@ export default function Dashboard() {
   const { data: affiliateStats } = api.affiliates.getMyStats.useQuery(undefined, {
     enabled: !!session?.user,
   });
-
-  // Redirect usando useEffect para evitar el error de setState durante render
-  React.useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in");
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
-      </div>
-    );
-  }
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in");
-    }
-  }, [status, router]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -260,5 +239,13 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

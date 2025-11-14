@@ -1,9 +1,24 @@
 import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
 export default withAuth(
   // `withAuth` augments your `Request` with the user's token.
   function middleware(req) {
-    // Add any additional middleware logic here if needed
+    const { pathname } = req.nextUrl;
+    const token = req.nextauth.token;
+
+    // Rutas que requieren rol de admin
+    const adminRoutes = ["/admin"];
+    const affiliateRoutes = ["/afiliados", "/afiliados/retirar"];
+
+    // Verificar si es ruta de admin
+    if (adminRoutes.some(route => pathname.startsWith(route))) {
+      if (!token || !["ADMIN", "SUPER_ADMIN", "VERIFIER"].includes(token.role as string)) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+    }
+
+    return NextResponse.next();
   },
   {
     callbacks: {

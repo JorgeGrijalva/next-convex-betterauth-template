@@ -3,6 +3,7 @@
 import { api } from "@/utils/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ProtectedRoute } from "@/components/protected-route";
 import { 
   Users, 
   Package, 
@@ -15,6 +16,14 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
+  return (
+    <ProtectedRoute requiredRole="ADMIN">
+      <AdminDashboardContent />
+    </ProtectedRoute>
+  );
+}
+
+function AdminDashboardContent() {
   const { data: userStats } = api.users.getStats.useQuery();
   const { data: paymentStats } = api.payments.getStats.useQuery({});
   const { data: subscriptionStats } = api.subscriptions.getStats.useQuery();
