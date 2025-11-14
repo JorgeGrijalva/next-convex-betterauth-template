@@ -6,6 +6,7 @@ import { paymentsRouter } from "@/server/api/routers/payments";
 import { subscriptionsRouter } from "@/server/api/routers/subscriptions";
 import { affiliatesRouter } from "@/server/api/routers/affiliates";
 import { announcementsRouter } from "@/server/api/routers/announcements";
+import { iptvAccountsRouter } from "@/server/api/routers/iptv-accounts";
 
 /**
  * This is the primary router for your server.
@@ -29,6 +30,9 @@ export const appRouter = createTRPCRouter({
   
   // Feed de Anuncios
   announcements: announcementsRouter,
+  
+  // Cuentas IPTV
+  iptvAccounts: iptvAccountsRouter,
 });
 
 // export type definition of API

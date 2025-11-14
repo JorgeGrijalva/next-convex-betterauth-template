@@ -88,6 +88,7 @@ model User {
   commissions       AffiliateCommission[] @relation("AffiliateCommissions")
   earnedCommissions AffiliateCommission[] @relation("ReferredCommissions")
   passwordResets    PasswordReset[]
+  iptvAccount       IptvAccount?
   
   @@index([whatsapp])
   @@index([referralCode])
@@ -226,6 +227,33 @@ model AffiliateCommission {
 // PENDING - Pendiente
 // PAID - Pagada
 // CANCELLED - Cancelada
+
+// Cuentas IPTV para usuarios
+model IptvAccount {
+  id              String   @id @default(cuid())
+  userId          String   @unique // Una cuenta por usuario
+  username        String   @unique // Usuario para el servicio IPTV
+  password        String   // Contraseña para el servicio IPTV
+  serverUrl       String   // URL del servidor IPTV
+  port            String?  // Puerto del servidor
+  isActive        Boolean  @default(true)
+  
+  // Información adicional
+  maxConnections  Int      @default(2) // Conexiones simultáneas permitidas
+  profileName     String?  // Nombre del perfil
+  notes           String?  // Notas adicionales
+  
+  // Fechas
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastUsed        DateTime? // Última vez que se usó
+  
+  // Relaciones
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([username])
+  @@index([userId])
+}
 
 // Configuración del Sistema de Afiliados
 model AffiliateConfig {

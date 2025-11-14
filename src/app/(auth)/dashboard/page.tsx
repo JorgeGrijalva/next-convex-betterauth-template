@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/client";
 import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
-import { Settings, CreditCard, Upload, Users, Megaphone } from "lucide-react";
+import { Settings, CreditCard, Upload, Users, Megaphone, Tv } from "lucide-react";
 import Image from "next/image";
 
 // Header Component - Shows user profile and navigation
@@ -93,6 +93,7 @@ const QuickActions = () => {
     { label: "Ver Planes", href: "/plans", description: "Explora nuestros planes de IPTV", icon: <CreditCard size={16} /> },
     { label: "Subir Comprobante", href: "/payments", description: "Sube tu comprobante de pago", icon: <Upload size={16} /> },
     { label: "Programa de Afiliados", href: "/affiliates", description: "Gana dinero refiriendo usuarios", icon: <Users size={16} /> },
+    { label: "Mi Cuenta IPTV", href: "/my-account", description: "Ver credenciales y configuración IPTV", icon: <Tv size={16} /> },
     { label: "Configuración", href: "/settings", description: "Ajusta tu perfil y preferencias", icon: <Settings size={16} /> },
   ];
 

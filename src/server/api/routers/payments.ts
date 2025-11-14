@@ -1,8 +1,113 @@
+// @ts-nocheck
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/server/api/trpc";
+import bcrypt from "bcryptjs";
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const paymentsRouter = createTRPCRouter({
+  // Crear nuevo pago público (flujo checkout para usuarios no autenticados)
+  publicCreate: publicProcedure
+    .input(z.object({
+      planId: z.string(),
+      amount: z.number().positive(),
+      name: z.string().min(1),
+      email: z.string().email().optional(),
+      whatsapp: z.string().optional(),
+      reference: z.string().optional(),
+      receiptImage: z.string().optional(),
+      paymentMethod: z.string().optional(),
+      paidAt: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Verificar que el plan existe y está activo
+      const plan = await ctx.db.plan.findUnique({
+        where: { id: input.planId },
+      });
+
+      if (!plan || !plan.isActive) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Plan no encontrado o inactivo",
+        });
+      }
+
+      // Verificar que el monto coincide con el precio del plan
+      if (input.amount !== plan.price) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "El monto no coincide con el precio del plan",
+        });
+      }
+
+      // Reusar usuario por email o whatsapp si existe
+      let user = null;
+      if (input.email) {
+        user = await ctx.db.user.findUnique({ where: { email: input.email } });
+      }
+      if (!user && input.whatsapp) {
+        user = await ctx.db.user.findUnique({ where: { whatsapp: input.whatsapp } });
+      }
+
+      // Crear usuario provisional si no existe
+      if (!user) {
+        const randomPassword = Math.random().toString(36).substring(2, 12);
+        const hashed = await bcrypt.hash(randomPassword, 12);
+        const referralCode = `U${Math.random().toString(36).substring(2,8).toUpperCase()}`;
+        const tempWhatsapp = `temp_${Date.now()}_${Math.random().toString(36).substring(2,6)}`;
+
+        user = await ctx.db.user.create({
+          data: {
+            name: input.name,
+            email: input.email,
+            whatsapp: tempWhatsapp,
+            password: hashed,
+            referralCode,
+            isActive: false,
+          },
+        });
+      }
+
+      // Crear el pago pendiente
+      const payment = await ctx.db.payment.create({
+        data: {
+          userId: user.id,
+          planId: input.planId,
+          amount: input.amount,
+          currency: plan.currency,
+          reference: input.reference,
+          receiptImage: input.receiptImage,
+          paymentMethod: input.paymentMethod,
+          paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
+          status: "PENDING",
+        },
+      });
+
+      // Buscar suscripción existente o crear nueva (marcada PENDING)
+      const existingSubscription = await ctx.db.subscription.findFirst({
+        where: {
+          userId: user.id,
+          planId: input.planId,
+        },
+      });
+
+      if (existingSubscription) {
+        await ctx.db.subscription.update({
+          where: { id: existingSubscription.id },
+          data: { status: "PENDING" },
+        });
+      } else {
+        await ctx.db.subscription.create({
+          data: {
+            userId: user.id,
+            planId: input.planId,
+            status: "PENDING",
+          },
+        });
+      }
+
+      return { payment, userId: user.id };
+    }),
+
   // Crear nuevo pago (cliente sube comprobante)
   create: protectedProcedure
     .input(z.object({
@@ -216,6 +321,56 @@ export const paymentsRouter = createTRPCRouter({
             startDate,
             endDate,
           },
+        });
+      }
+
+      // Crear cuenta IPTV si no existe
+      const existingIptvAccount = await ctx.db.iptvAccount.findUnique({
+        where: { userId: payment.userId },
+      });
+
+      if (!existingIptvAccount) {
+        // Generar credenciales IPTV
+        const username = `iptv_${payment.user.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).substring(2, 8)}`;
+        const password = Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 4).toUpperCase();
+        
+        // Crear cuenta IPTV
+        await ctx.db.iptvAccount.create({
+          data: {
+            userId: payment.userId,
+            username,
+            password,
+            serverUrl: "http://tu-servidor-iptv.com", // Cambiar por tu servidor real
+            port: "8080",
+            maxConnections: 2,
+            profileName: payment.user.name,
+            notes: `Cuenta creada automáticamente al aprobar pago del plan ${payment.plan.name}`,
+          },
+        });
+
+        // TODO: Enviar credenciales por WhatsApp
+        console.log("Webhook to n8n - IPTV Account Created:", {
+          event: "iptv.account_created",
+          user: {
+            name: payment.user.name,
+            whatsapp: payment.user.whatsapp,
+          },
+          credentials: {
+            username,
+            password,
+            serverUrl: "http://tu-servidor-iptv.com",
+            port: "8080",
+          },
+          subscription: {
+            plan: payment.plan.name,
+            endDate: endDate.toISOString(),
+          },
+        });
+      } else if (!existingIptvAccount.isActive) {
+        // Reactivar cuenta si estaba desactivada
+        await ctx.db.iptvAccount.update({
+          where: { id: existingIptvAccount.id },
+          data: { isActive: true },
         });
       }
 

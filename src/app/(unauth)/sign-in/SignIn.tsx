@@ -49,12 +49,12 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-          <p className="text-gray-600 text-sm">
-            Welcome back! Please sign in to your account.
+          <CardTitle className="text-2xl font-bold">Inicia sesión</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            Ingresa a tu cuenta para acceder al panel de FLUTV.
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -87,7 +87,7 @@ export default function SignIn() {
               disabled={loading}
             >
               <Github className="w-4 h-4 mr-2" />
-              Continue with GitHub
+              Continuar con GitHub
             </Button>
 
             <Button
@@ -97,16 +97,16 @@ export default function SignIn() {
               disabled={loading}
             >
               <Chrome className="w-4 h-4 mr-2" />
-              Continue with Google
+              Continuar con Google
             </Button>
           </div>
 
           {/* Links */}
           <div className="text-center space-y-2">
-            <p className="text-sm text-gray-600">
-              New to our platform?{" "}
-              <Link href="/sign-up" className="text-blue-600 hover:underline">
-                Create an account
+            <p className="text-sm text-muted-foreground">
+              ¿No tienes cuenta?{" "}
+              <Link href="/sign-up" className="text-primary hover:underline">
+                Crea una cuenta
               </Link>
             </p>
           </div>
