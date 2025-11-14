@@ -157,7 +157,7 @@ export default function UsersManagementPage() {
         {/* Users Table */}
         {users && users.length > 0 ? (
           <div className="space-y-4">
-            {users.map((user) => (
+            {users.map((user: any) => (
               <Card key={user.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
@@ -253,7 +253,7 @@ export default function UsersManagementPage() {
                               <TabsContent value="subscriptions">
                                 {userDetails.subscriptions.length > 0 ? (
                                   <div className="space-y-3">
-                                    {userDetails.subscriptions.map((sub) => (
+                                    {userDetails.subscriptions.map((sub: any) => (
                                       <div key={sub.id} className="border rounded p-3">
                                         <div className="flex justify-between items-center">
                                           <div>
@@ -279,7 +279,7 @@ export default function UsersManagementPage() {
                               <TabsContent value="payments">
                                 {userDetails.payments.length > 0 ? (
                                   <div className="space-y-3">
-                                    {userDetails.payments.map((payment) => (
+                                    {userDetails.payments.map((payment: any) => (
                                       <div key={payment.id} className="border rounded p-3">
                                         <div className="flex justify-between items-center">
                                           <div>
@@ -313,7 +313,7 @@ export default function UsersManagementPage() {
                               <TabsContent value="referrals">
                                 {userDetails.referredUsers.length > 0 ? (
                                   <div className="space-y-3">
-                                    {userDetails.referredUsers.map((referred) => (
+                                    {userDetails.referredUsers.map((referred: any) => (
                                       <div key={referred.id} className="border rounded p-3">
                                         <div className="flex justify-between items-center">
                                           <div>
