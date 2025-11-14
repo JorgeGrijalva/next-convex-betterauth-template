@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/trpc/react";
+import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,7 +60,7 @@ export default function AdminPlansPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      const features = formData.features.split("\n").filter(f => f.trim());
+      const features = formData.features.split("\n").filter((f: string) => f.trim());
       
       if (plan) {
         updatePlan.mutate({
@@ -219,7 +219,7 @@ export default function AdminPlansPage() {
                   <div>
                     <p className="font-medium text-white">{plan.name}</p>
                     <p className="text-sm text-gray-400">
-                      {plan.features.length} características
+                      {(plan.features?.length || 0)} características
                     </p>
                   </div>
                 </TableCell>

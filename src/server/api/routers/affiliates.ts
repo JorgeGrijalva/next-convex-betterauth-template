@@ -439,4 +439,58 @@ export const affiliatesRouter = createTRPCRouter({
         pendingCommissionsCount: totalCommissionsPending._count,
       };
     }),
+
+  // Obtener solicitudes de retiro (admin)
+  getWithdrawalRequests: adminProcedure
+    .input(z.object({
+      status: z.enum(["PENDING", "PAID", "CANCELLED"]).optional(),
+      limit: z.number().default(50),
+      offset: z.number().default(0),
+    }))
+    .query(async ({ ctx, input }) => {
+      const where = input.status ? { status: input.status } : {};
+      
+      const [withdrawals, total] = await Promise.all([
+        ctx.db.withdrawalRequest.findMany({
+          where,
+          include: {
+            affiliate: {
+              select: {
+                id: true,
+                name: true,
+                whatsapp: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          skip: input.offset,
+        }),
+        ctx.db.withdrawalRequest.count({ where }),
+      ]);
+
+      return {
+        withdrawals,
+        total,
+        hasMore: input.offset + input.limit < total,
+      };
+    }),
+
+  // Actualizar estado de solicitud de retiro (admin)
+  updateWithdrawalStatus: adminProcedure
+    .input(z.object({
+      withdrawalId: z.string(),
+      status: z.enum(["PENDING", "PAID", "CANCELLED"]),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.withdrawalRequest.update({
+        where: { id: input.withdrawalId },
+        data: {
+          status: input.status,
+          paidAt: input.status === "PAID" ? new Date() : null,
+        },
+      });
+    }),
 });

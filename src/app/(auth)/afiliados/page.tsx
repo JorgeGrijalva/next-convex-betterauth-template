@@ -15,7 +15,8 @@ import {
   CheckCircle,
   UserPlus,
   Copy,
-  LinkIcon
+  LinkIcon,
+  ArrowUpRight
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -176,6 +177,18 @@ export default function Afiliados() {
                 </p>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Withdrawal Button */}
+        {stats && stats.balance > 0 && (
+          <div className="mb-8 text-center">
+            <Link href="/afiliados/retirar">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <ArrowUpRight className="w-4 h-4 mr-2" />
+                Retirar Comisiones (${stats.balance})
+              </Button>
+            </Link>
           </div>
         )}
 

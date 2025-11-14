@@ -1,6 +1,6 @@
 "use client";
 
-import { api } from "@/trpc/react";
+import { api } from "@/utils/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -15,11 +15,13 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
-  const { data: stats } = api.admin.getDashboardStats.useQuery();
-  const { data: recentPayments } = api.payments.getRecent.useQuery({ limit: 5 });
-  const { data: pendingWithdrawals } = api.affiliates.getWithdrawalRequests.useQuery({ 
-    status: "pending" 
-  });
+  const { data: userStats } = api.users.getStats.useQuery();
+  const { data: paymentStats } = api.payments.getStats.useQuery({});
+  const { data: subscriptionStats } = api.subscriptions.getStats.useQuery();
+  const { data: iptvStats } = api.iptvAccounts.getStats.useQuery();
+  const { data: announcementStats } = api.announcements.getStats.useQuery();
+  const { data: recentPayments } = api.payments.getAll.useQuery({ limit: 5 });
+  const { data: affiliateStats } = api.affiliates.getGeneralStats.useQuery();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -49,9 +51,9 @@ export default function AdminDashboardPage() {
             <Users className="h-4 w-4 text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.totalUsers || 0}</div>
+            <div className="text-2xl font-bold text-white">{userStats?.total || 0}</div>
             <p className="text-xs text-gray-400">
-              +{stats?.newUsersThisMonth || 0} este mes
+              +{userStats?.newUsersThisMonth || 0} este mes
             </p>
           </CardContent>
         </Card>
@@ -62,9 +64,9 @@ export default function AdminDashboardPage() {
             <Package className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.activeSubscriptions || 0}</div>
+            <div className="text-2xl font-bold text-white">{subscriptionStats?.active || 0}</div>
             <p className="text-xs text-gray-400">
-              {stats?.totalSubscriptions || 0} totales
+              {subscriptionStats?.total || 0} totales
             </p>
           </CardContent>
         </Card>
@@ -75,9 +77,9 @@ export default function AdminDashboardPage() {
             <DollarSign className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${stats?.monthlyRevenue || 0}</div>
+            <div className="text-2xl font-bold text-white">${paymentStats?.totalRevenue || 0}</div>
             <p className="text-xs text-gray-400">
-              {stats?.pendingPayments || 0} pagos pendientes
+              {paymentStats?.pending || 0} pagos pendientes
             </p>
           </CardContent>
         </Card>
@@ -88,9 +90,9 @@ export default function AdminDashboardPage() {
             <Server className="h-4 w-4 text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.totalIptvAccounts || 0}</div>
+            <div className="text-2xl font-bold text-white">{iptvStats?.total || 0}</div>
             <p className="text-xs text-gray-400">
-              {stats?.activeIptvAccounts || 0} activas
+              {iptvStats?.active || 0} activas
             </p>
           </CardContent>
         </Card>
@@ -143,27 +145,22 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {pendingWithdrawals?.map((withdrawal) => (
-                <div key={withdrawal.id} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-white">
-                      {withdrawal.affiliate.name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      ${withdrawal.amount} - {withdrawal.paymentMethod}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge className="bg-yellow-600">Pendiente</Badge>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(withdrawal.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-white">
+                    Comisiones Pendientes
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {affiliateStats?.pendingCommissionsCount || 0} solicitudes
+                  </p>
                 </div>
-              ))}
+                <div className="text-right">
+                  <Badge className="bg-yellow-600">${affiliateStats?.totalCommissionsPending || 0}</Badge>
+                </div>
+              </div>
               
-              {pendingWithdrawals?.length === 0 && (
-                <p className="text-gray-400 text-center py-4">No hay solicitudes pendientes</p>
+              {(affiliateStats?.pendingCommissionsCount || 0) === 0 && (
+                <p className="text-gray-400 text-center py-4">No hay comisiones pendientes</p>
               )}
             </div>
           </CardContent>

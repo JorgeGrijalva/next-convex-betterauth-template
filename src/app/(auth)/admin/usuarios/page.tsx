@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/trpc/react";
+import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,16 +26,16 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   
-  const { data: users, isLoading } = api.users.getAllUsers.useQuery({
+  const { data: users, isLoading } = api.users.getAll.useQuery({
     search: searchTerm,
-    role: roleFilter === "all" ? undefined : roleFilter,
+    role: roleFilter === "all" ? undefined : roleFilter as "CLIENT" | "VERIFIER" | "ADMIN" | "SUPER_ADMIN",
   });
 
   const utils = api.useUtils();
 
-  const updateUserRole = api.users.updateUserRole.useMutation({
+  const updateUserRole = api.users.update.useMutation({
     onSuccess: () => {
-      utils.users.getAllUsers.invalidate();
+      utils.users.getAll.invalidate();
     },
   });
 
@@ -147,8 +147,8 @@ export default function AdminUsersPage() {
                     value={user.role}
                     onValueChange={(newRole) => {
                       updateUserRole.mutate({
-                        userId: user.id,
-                        role: newRole,
+                        id: user.id,
+                        role: newRole as "ADMIN" | "VERIFIER" | "CLIENT",
                       });
                     }}
                     disabled={user.role === "SUPER_ADMIN"}

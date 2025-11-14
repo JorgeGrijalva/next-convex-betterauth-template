@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/trpc/react";
+import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,19 +23,20 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bell, Plus, Edit, Calendar, User } from "lucide-react";
 
 export default function AdminAnnouncementsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
   
-  const { data: announcements, isLoading } = api.announcements.getAll.useQuery();
+  const { data: announcements, isLoading } = api.announcements.getAll.useQuery({});
   const utils = api.useUtils();
 
   const createAnnouncement = api.announcements.create.useMutation({
     onSuccess: () => {
       utils.announcements.getAll.invalidate();
-      utils.announcements.getActive.invalidate();
+      utils.announcements.getFeed.invalidate();
       setIsCreateOpen(false);
     },
   });
@@ -43,7 +44,7 @@ export default function AdminAnnouncementsPage() {
   const updateAnnouncement = api.announcements.update.useMutation({
     onSuccess: () => {
       utils.announcements.getAll.invalidate();
-      utils.announcements.getActive.invalidate();
+      utils.announcements.getFeed.invalidate();
       setEditingAnnouncement(null);
     },
   });
@@ -51,7 +52,7 @@ export default function AdminAnnouncementsPage() {
   const deleteAnnouncement = api.announcements.delete.useMutation({
     onSuccess: () => {
       utils.announcements.getAll.invalidate();
-      utils.announcements.getActive.invalidate();
+      utils.announcements.getFeed.invalidate();
     },
   });
 
@@ -72,8 +73,8 @@ export default function AdminAnnouncementsPage() {
     const [formData, setFormData] = useState({
       title: announcement?.title || "",
       content: announcement?.content || "",
-      priority: announcement?.priority || "medium",
-      isActive: announcement?.isActive ?? true,
+      imageUrl: announcement?.imageUrl || "",
+      isPublished: announcement?.isPublished ?? true,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -115,29 +116,23 @@ export default function AdminAnnouncementsPage() {
         </div>
         
         <div>
-          <Label htmlFor="priority" className="text-white">Prioridad</Label>
-          <Select
-            value={formData.priority}
-            onValueChange={(value) => setFormData({ ...formData, priority: value })}
-          >
-            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="low">Baja</SelectItem>
-              <SelectItem value="medium">Media</SelectItem>
-              <SelectItem value="high">Alta</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="imageUrl" className="text-white">URL de Imagen (opcional)</Label>
+          <Input
+            id="imageUrl"
+            value={formData.imageUrl}
+            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+            className="bg-gray-700 border-gray-600 text-white"
+            placeholder="https://ejemplo.com/imagen.jpg"
+          />
         </div>
         
         <div className="flex items-center gap-2">
           <Switch
-            id="isActive"
-            checked={formData.isActive}
-            onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+            id="isPublished"
+            checked={formData.isPublished}
+            onChange={(checked) => setFormData({ ...formData, isPublished: checked })}
           />
-          <Label htmlFor="isActive" className="text-white">Anuncio Activo</Label>
+          <Label htmlFor="isPublished" className="text-white">Publicar Anuncio</Label>
         </div>
         
         <div className="flex gap-3 pt-4">
@@ -220,12 +215,12 @@ export default function AdminAnnouncementsPage() {
                   </p>
                 </TableCell>
                 <TableCell>
-                  {getPriorityBadge(announcement.priority)}
+                  <Badge className="bg-blue-600">General</Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-300">{announcement.author.name}</span>
+                    <span className="text-gray-300">{announcement.createdBy}</span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -237,8 +232,8 @@ export default function AdminAnnouncementsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge className={announcement.isActive ? "bg-green-600" : "bg-red-600"}>
-                    {announcement.isActive ? "Activo" : "Inactivo"}
+                  <Badge className={announcement.isPublished ? "bg-green-600" : "bg-red-600"}>
+                    {announcement.isPublished ? "Publicado" : "Borrador"}
                   </Badge>
                 </TableCell>
                 <TableCell>

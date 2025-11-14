@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/trpc/react";
+import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,8 +24,8 @@ import { DollarSign, User, Calendar, Clock } from "lucide-react";
 export default function AdminWithdrawalsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   
-  const { data: withdrawals, isLoading } = api.affiliates.getWithdrawalRequests.useQuery({
-    status: statusFilter === "all" ? undefined : statusFilter,
+  const { data: withdrawalsData, isLoading } = api.affiliates.getWithdrawalRequests.useQuery({
+    status: statusFilter === "all" ? undefined : statusFilter.toUpperCase() as "PENDING" | "PAID" | "CANCELLED",
   });
 
   const utils = api.useUtils();
@@ -38,18 +38,18 @@ export default function AdminWithdrawalsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
+      case "PENDING":
         return <Badge className="bg-yellow-600">Pendiente</Badge>;
-      case "approved":
-        return <Badge className="bg-green-600">Aprobado</Badge>;
-      case "rejected":
-        return <Badge className="bg-red-600">Rechazado</Badge>;
+      case "PAID":
+        return <Badge className="bg-green-600">Pagado</Badge>;
+      case "CANCELLED":
+        return <Badge className="bg-red-600">Cancelado</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const handleStatusUpdate = (withdrawalId: string, newStatus: string) => {
+  const handleStatusUpdate = (withdrawalId: string, newStatus: "PENDING" | "PAID" | "CANCELLED") => {
     updateWithdrawalStatus.mutate({
       withdrawalId,
       status: newStatus,
@@ -108,7 +108,7 @@ export default function AdminWithdrawalsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {withdrawals?.map((withdrawal) => (
+            {withdrawalsData?.withdrawals?.map((withdrawal) => (
               <TableRow key={withdrawal.id} className="border-gray-700 hover:bg-gray-700/50">
                 <TableCell>
                   <div>
@@ -124,12 +124,10 @@ export default function AdminWithdrawalsPage() {
                 </TableCell>
                 <TableCell>
                   <div className="text-gray-300">
-                    <p className="font-medium">{withdrawal.paymentMethod}</p>
-                    {withdrawal.paymentDetails && (
-                      <p className="text-sm text-gray-400 max-w-xs truncate">
-                        {withdrawal.paymentDetails}
-                      </p>
-                    )}
+                    <p className="font-medium">Transferencia Bancaria</p>
+                    <p className="text-sm text-gray-400">
+                      {withdrawal.bank} - {withdrawal.clabe}
+                    </p>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -144,12 +142,12 @@ export default function AdminWithdrawalsPage() {
                   {getStatusBadge(withdrawal.status)}
                 </TableCell>
                 <TableCell>
-                  {withdrawal.status === "pending" && (
+                  {withdrawal.status === "PENDING" && (
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         className="bg-green-600 hover:bg-green-700"
-                        onClick={() => handleStatusUpdate(withdrawal.id, "approved")}
+                        onClick={() => handleStatusUpdate(withdrawal.id, "PAID")}
                       >
                         Aprobar
                       </Button>
@@ -157,15 +155,15 @@ export default function AdminWithdrawalsPage() {
                         size="sm"
                         variant="outline"
                         className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-                        onClick={() => handleStatusUpdate(withdrawal.id, "rejected")}
+                        onClick={() => handleStatusUpdate(withdrawal.id, "CANCELLED")}
                       >
                         Rechazar
                       </Button>
                     </div>
                   )}
-                  {withdrawal.status !== "pending" && (
+                  {withdrawal.status !== "PENDING" && (
                     <span className="text-gray-400 text-sm">
-                      {withdrawal.status === "approved" ? "Procesado" : "Finalizado"}
+                      {withdrawal.status === "PAID" ? "Procesado" : "Cancelado"}
                     </span>
                   )}
                 </TableCell>
@@ -174,7 +172,7 @@ export default function AdminWithdrawalsPage() {
           </TableBody>
         </Table>
         
-        {withdrawals?.length === 0 && (
+        {withdrawalsData?.withdrawals?.length === 0 && (
           <div className="text-center py-8">
             <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-500" />
             <p className="text-gray-400">No hay solicitudes de retiro</p>

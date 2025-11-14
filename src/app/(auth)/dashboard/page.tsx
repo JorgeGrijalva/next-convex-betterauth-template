@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnnouncementsFeed } from "@/components/announcements-feed";
 import { 
   Play, 
   CreditCard, 
@@ -95,6 +96,9 @@ export default function Dashboard() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Announcements Feed */}
+        <AnnouncementsFeed />
+        
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">

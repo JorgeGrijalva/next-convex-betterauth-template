@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/trpc/react";
+import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,24 +33,26 @@ import { Search, Server, User, Key, Plus, Edit } from "lucide-react";
 export default function AdminIptvAccountsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
   
-  const { data: accounts, isLoading } = api.iptvAccounts.getAll.useQuery({
+  const { data: accounts, isLoading } = api.iptvAccounts.getAllAccounts.useQuery({
     search: searchTerm,
-    status: statusFilter === "all" ? undefined : statusFilter,
+    isActive: statusFilter === "all" ? undefined : statusFilter === "active",
   });
 
-  const { data: users } = api.users.getAllUsers.useQuery({});
+  const { data: users } = api.users.getAll.useQuery({});
   const utils = api.useUtils();
 
-  const createAccount = api.iptvAccounts.create.useMutation({
+  const createAccount = api.iptvAccounts.createAccount.useMutation({
     onSuccess: () => {
-      utils.iptvAccounts.getAll.invalidate();
+      utils.iptvAccounts.getAllAccounts.invalidate();
     },
   });
 
-  const updateAccount = api.iptvAccounts.update.useMutation({
+  const updateAccount = api.iptvAccounts.updateAccount.useMutation({
     onSuccess: () => {
-      utils.iptvAccounts.getAll.invalidate();
+      utils.iptvAccounts.getAllAccounts.invalidate();
     },
   });
 
@@ -72,7 +74,7 @@ export default function AdminIptvAccountsPage() {
       username: account?.username || "",
       password: account?.password || "",
       serverUrl: account?.serverUrl || "",
-      status: account?.status || "active",
+      isActive: account?.isActive ?? true,
       userId: account?.userId || "",
     });
 
@@ -81,11 +83,15 @@ export default function AdminIptvAccountsPage() {
       
       if (account) {
         updateAccount.mutate({
-          id: account.id,
-          ...formData,
+          accountId: account.id,
+          serverUrl: formData.serverUrl,
+          isActive: formData.isActive,
         });
       } else {
-        createAccount.mutate(formData);
+        createAccount.mutate({
+          userId: formData.userId,
+          serverUrl: formData.serverUrl || "https://iptv.example.com",
+        });
       }
     };
 
@@ -147,18 +153,17 @@ export default function AdminIptvAccountsPage() {
         </div>
         
         <div>
-          <Label htmlFor="status" className="text-white">Estado</Label>
+          <Label htmlFor="isActive" className="text-white">Estado</Label>
           <Select
-            value={formData.status}
-            onValueChange={(value) => setFormData({ ...formData, status: value })}
+            value={formData.isActive ? "active" : "inactive"}
+            onValueChange={(value) => setFormData({ ...formData, isActive: value === "active" })}
           >
             <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
               <SelectItem value="active">Activo</SelectItem>
-              <SelectItem value="suspended">Suspendido</SelectItem>
-              <SelectItem value="expired">Expirado</SelectItem>
+              <SelectItem value="inactive">Inactivo</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -257,7 +262,7 @@ export default function AdminIptvAccountsPage() {
                 <TableCell>
                   <div>
                     <p className="font-medium text-white">{account.user.name}</p>
-                    <p className="text-sm text-gray-400">{account.user.email}</p>
+                    <p className="text-sm text-gray-400">{account.user.whatsapp}</p>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -278,14 +283,14 @@ export default function AdminIptvAccountsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(account.status)}
+                  {getStatusBadge(account.isActive ? "active" : "inactive")}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setEditingPlan(account)}
+                      onClick={() => setEditingAccount(account)}
                       className="border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white"
                     >
                       <Edit className="w-4 h-4" />
@@ -305,13 +310,13 @@ export default function AdminIptvAccountsPage() {
         )}
       </div>
 
-      <Dialog open={!!editingPlan} onOpenChange={() => setEditingPlan(null)}>
+      <Dialog open={!!editingAccount} onOpenChange={() => setEditingAccount(null)}>
         <DialogContent className="bg-gray-800 border-gray-600">
           <DialogHeader>
             <DialogTitle className="text-white">Editar Cuenta IPTV</DialogTitle>
           </DialogHeader>
-          {editingPlan && (
-            <AccountForm account={editingPlan} onClose={() => setEditingPlan(null)} />
+          {editingAccount && (
+            <AccountForm account={editingAccount} onClose={() => setEditingAccount(null)} />
           )}
         </DialogContent>
       </Dialog>
