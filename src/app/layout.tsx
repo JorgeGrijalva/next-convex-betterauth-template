@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/next-theme/theme-provider";
 import { Footer } from "@/components/footer";
-
-import { ConvexClientProvider } from "./ConvexClientProvider";
+import { TRPCReactProvider } from "@/components/providers/trpc-provider";
+import { SessionProviderWrapper } from "@/components/providers/session-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -12,8 +12,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Nextjs with convex",
-  description: "First templete by Podalls",
+  title: "Next.js T3 App",
+  description: "T3 Stack with Prisma, tRPC, and NextAuth.js",
 };
 
 export default function RootLayout({
@@ -32,14 +32,14 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ConvexClientProvider>
-            <main className=" px-2 md:px-4 grow flex flex-col">
-            
-              {children}
-            </main>
-            <Footer />
-            </ConvexClientProvider>
-            
+            <TRPCReactProvider>
+              <SessionProviderWrapper>
+                <main className=" px-2 md:px-4 grow flex flex-col">
+                  {children}
+                </main>
+                <Footer />
+              </SessionProviderWrapper>
+            </TRPCReactProvider>
           </ThemeProvider>
       </body>
     </html>

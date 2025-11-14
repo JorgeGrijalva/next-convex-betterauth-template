@@ -1,44 +1,69 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import Link from "next/link";
 import { Toaster } from "sonner";
-
-import {
-  AppContainer,
-  AppHeader,
-  AppNav,
-  SettingsButton,
-  SettingsButtonContent,
-  UserProfile,
-} from "@/components/server";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+
+// Temporary: using inline components instead of server components
+// import {
+//   AppContainer,
+//   AppHeader,
+//   AppNav,
+//   SettingsButton,
+//   SettingsButtonContent,
+//   UserProfile,
+// } from "@/components/server";
 import { SignOutButton } from "@/components/client";
+import { api } from "@/utils/api";
+import { TodoList } from "@/components/todo-list";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
+import Image from "next/image";
 
 // Header Component - Shows user profile and navigation
 const Header = () => {
   const router = useRouter();
-  const user = useQuery(api.auth.getCurrentUser);
+  const { data: session } = useSession();
 
   const handleSignOut = async () => {
-    await authClient.signOut();
+    await signOut();
     router.push("/sign-in");
   };
 
   return (
-    <AppHeader>
-      <UserProfile user={user} />
-      <AppNav>
-        <SettingsButton>
+    <header className="flex items-center justify-between max-w-2xl mx-auto">
+      <div className="flex items-center space-x-2">
+        {session?.user?.image ? (
+          <Image
+            src={session.user.image}
+            alt={session.user.name || "User"}
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center text-orange-600 dark:text-orange-200 font-medium">
+            {session?.user?.name?.[0]?.toUpperCase() || "U"}
+          </div>
+        )}
+        <div>
+          <h1 className="font-medium">{session?.user?.name}</h1>
+          <p className="text-sm text-neutral-500">{session?.user?.email}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" asChild>
           <Link href="/settings">
-            <SettingsButtonContent />
+            <div className="flex items-center gap-2">
+              <Settings size={16} />
+              Settings
+            </div>
           </Link>
-        </SettingsButton>
+        </Button>
         <SignOutButton onClick={handleSignOut} />
-      </AppNav>
-    </AppHeader>
+      </div>
+    </header>
   );
 };
 
@@ -91,13 +116,15 @@ const QuickActions = () => {
   );
 };
 
-// Recent Activity Component - Shows recent user activity (placeholder)
+// Recent Activity Component - Shows recent user activity
 const RecentActivity = () => {
-  // TODO: Replace with actual activity data from your Convex queries
-  const activities = [
-    { action: "Account created", time: "Just now" },
-    { action: "Logged in", time: "Just now" },
-  ];
+  const { data: todos } = api.todo.getAll.useQuery();
+  
+  // Transform recent todos into activity items
+  const activities = todos?.slice(0, 5).map((todo) => ({
+    action: `${todo.completed ? "Completed" : "Created"} todo: "${todo.text}"`,
+    time: new Date(todo.updatedAt).toLocaleString(),
+  })) || [];
 
   return (
     <div className="border rounded-lg p-6">
@@ -116,7 +143,10 @@ const RecentActivity = () => {
 
 // Main Dashboard Content
 const DashboardContent = () => {
-  const user = useQuery(api.auth.getCurrentUser);
+  const { data: session } = useSession();
+  const { data: todos } = api.todo.getAll.useQuery();
+  const totalTodos = todos?.length || 0;
+  const completedTodos = todos?.filter(todo => todo.completed).length || 0;
 
   return (
     <div className="space-y-8">
@@ -124,15 +154,15 @@ const DashboardContent = () => {
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, {user?.name || user?.email}
+          Welcome back, {session?.user?.name || session?.user?.email}
         </p>
       </div>
 
-      {/* Stats Grid - Replace with your own metrics */}
+      {/* Stats Grid - Real metrics from tRPC */}
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Total Users" value="1" description="Active accounts" />
-        <StatCard label="Projects" value="0" description="Active projects" />
-        <StatCard label="Status" value="Active" description="All systems operational" />
+        <StatCard label="Total Todos" value={totalTodos} description="All todos created" />
+        <StatCard label="Completed" value={completedTodos} description="Finished todos" />
+        <StatCard label="Pending" value={totalTodos - completedTodos} description="Remaining todos" />
       </div>
 
       {/* Two Column Layout */}
@@ -141,6 +171,9 @@ const DashboardContent = () => {
         <RecentActivity />
       </div>
 
+      {/* Todo Management Section */}
+      <TodoList />
+
       {/* Getting Started Section (Remove this after setup) */}
       <div className="border rounded-lg p-6 bg-muted/30">
         <h2 className="text-lg font-medium mb-3">Getting Started</h2>
@@ -148,7 +181,7 @@ const DashboardContent = () => {
           This is a boilerplate dashboard. Customize it by:
         </p>
         <ul className="text-sm space-y-2 list-disc list-inside text-muted-foreground">
-          <li>Replacing StatCard values with your own Convex queries</li>
+          <li>Replacing StatCard values with your own tRPC queries</li>
           <li>Adding your own components and sections</li>
           <li>Creating new pages in the /dashboard directory</li>
           <li>Customizing the layout to fit your needs</li>
@@ -164,10 +197,10 @@ const DashboardContent = () => {
 // Main Page Export
 export default function DashboardPage() {
   return (
-    <AppContainer>
+    <div className="min-h-screen w-full p-4 space-y-8">
       <Header />
       <DashboardContent />
       <Toaster />
-    </AppContainer>
+    </div>
   );
 }

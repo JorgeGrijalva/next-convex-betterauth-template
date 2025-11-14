@@ -1,4 +1,6 @@
-# Next.js + Convex + Better Auth Template
+# T3 Stack Application
+
+This is a modern web application built with the T3 Stack: **Next.js 16**, **Prisma**, **tRPC**, and **NextAuth.js**.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0.1-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.0-blue?style=flat&logo=react)](https://react.dev/)

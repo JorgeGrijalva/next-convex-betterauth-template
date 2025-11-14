@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+// import { authClient } from "@/lib/auth-client"; // Removed - using NextAuth instead
 import EnableTwoFactor from "@/app/(auth)/settings/EnableTwoFactor";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -23,11 +23,9 @@ export default function SettingsPage() {
 
   const handleDisable2FA = async () => {
     try {
-      throw new Error("Not implemented");
       setLoading(true);
-      await authClient.twoFactor.disable({
-        password: "",
-      });
+      // TODO: Implement 2FA disable with NextAuth
+      alert("2FA functionality not yet implemented with NextAuth");
     } catch {
       alert("Failed to disable 2FA. Please try again.");
     } finally {
@@ -42,8 +40,9 @@ export default function SettingsPage() {
       )
     ) {
       try {
-        await authClient.deleteUser();
-        router.push("/");
+        // TODO: Implement account deletion with NextAuth and tRPC
+        alert("Delete account functionality not yet implemented");
+        // router.push("/");
       } catch {
         alert("Failed to delete account. Please try again.");
       }
@@ -125,12 +124,12 @@ export default function SettingsPage() {
                 <p className="text-center text-xs text-neutral-500">
                   Powered by{" "}
                   <Link
-                    href="https://better-auth.com"
+                    href="https://next-auth.js.org"
                     className="underline"
                     target="_blank"
                   >
-                    <span className="dark:text-orange-200/90">
-                      better-auth
+                    <span className="dark:text-blue-200/90">
+                      NextAuth.js
                     </span>
                   </Link>
                 </p>
