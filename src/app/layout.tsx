@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} min-h-[calc(100vh-2rem)] flex flex-col gap-4 antialiased`}
+        className={`${inter.variable} min-h-screen flex flex-col antialiased`}
       >
          <ThemeProvider
             attribute="class"
@@ -36,7 +36,7 @@ export default function RootLayout({
             <TRPCReactProvider>
               <SessionProviderWrapper>
                 <AppHeader />
-                <main className="w-full max-w-6xl mx-auto px-4 md:px-6 grow flex flex-col">
+                <main className="w-full grow flex flex-col">
                   {children}
                 </main>
                 <Footer />

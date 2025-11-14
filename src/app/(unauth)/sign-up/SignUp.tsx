@@ -59,8 +59,8 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md bg-slate-800/80 border-slate-700">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Crea tu cuenta</CardTitle>
           <CardDescription className="text-sm">

@@ -567,30 +567,3 @@ export const paymentsRouter = createTRPCRouter({
       };
     }),
 });
-      // Si se usa monedero, descontar comisiones pendientes
-      if (walletUse > 0) {
-        let remaining = walletUse;
-        const pending = await ctx.db.affiliateCommission.findMany({
-          where: { affiliateId: ctx.session.user.id, status: "PENDING" },
-          orderBy: { createdAt: "asc" },
-        });
-        for (const c of pending) {
-          const amt = c.amount || 0;
-          if (amt <= 0) continue;
-          if (remaining <= 0) break;
-          const toPay = Math.min(amt, remaining);
-          await ctx.db.affiliateCommission.update({
-            where: { id: c.id },
-            data: { status: "PAID", paidAt: new Date() },
-          });
-          remaining -= toPay;
-        }
-        await ctx.db.walletTransaction.create({
-          data: {
-            userId: ctx.session.user.id,
-            type: "PURCHASE",
-            amount: walletUse,
-            description: `Uso de monedero para plan ${plan.name}`,
-          },
-        });
-      }

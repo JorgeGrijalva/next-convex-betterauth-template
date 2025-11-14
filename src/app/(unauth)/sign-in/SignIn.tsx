@@ -49,20 +49,19 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Inicia sesión</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Ingresa a tu cuenta para acceder al panel de FLUTV.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <Card className="w-full max-w-md bg-slate-800/80 border-purple-700">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold text-white">Inicia sesión</CardTitle>
+        <p className="text-gray-300 text-sm mt-2">
+          Ingresa a tu cuenta para acceder al panel de FLUTV.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
           {/* Error Alert */}
           {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <X className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
+            <Alert className="border-red-500 bg-red-900/30">
+              <X className="h-4 w-4 text-red-400" />
+              <AlertDescription className="text-red-300">
                 {error}
               </AlertDescription>
             </Alert>
@@ -70,9 +69,9 @@ export default function SignIn() {
 
           {/* Success Alert */}
           {success && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
+            <Alert className="border-green-500 bg-green-900/30">
+              <CheckCircle2 className="h-4 w-4 text-green-400" />
+              <AlertDescription className="text-green-300">
                 {success}
               </AlertDescription>
             </Alert>
@@ -80,18 +79,18 @@ export default function SignIn() {
 
           <form className="space-y-4" onSubmit={handleCredentialsSignIn}>
             <div>
-              <Label htmlFor="identifier">WhatsApp o Email</Label>
+              <Label htmlFor="identifier" className="text-gray-300">WhatsApp o Email</Label>
               <Input
                 id="identifier"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="+52XXXXXXXXXX o nombre@correo.com"
                 required
-                className="mt-2"
+                className="mt-2 bg-slate-700 border-slate-600 text-white placeholder:text-gray-500"
               />
             </div>
             <div>
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="text-gray-300">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
@@ -99,30 +98,29 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tu contraseña"
                 required
-                className="mt-2"
+                className="mt-2 bg-slate-700 border-slate-600 text-white placeholder:text-gray-500"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
               {loading ? "Ingresando..." : "Iniciar sesión"}
             </Button>
           </form>
 
           {/* Links */}
           <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-400">
               ¿No tienes cuenta?{" "}
-              <Link href="/sign-up" className="text-primary hover:underline">
+              <Link href="/sign-up" className="text-purple-400 hover:text-purple-300 underline">
                 Crea una cuenta
               </Link>
             </p>
             <p className="text-sm">
-              <Link href="/reset-password" className="hover:underline">
+              <Link href="/reset-password" className="text-gray-400 hover:text-gray-300 underline">
                 ¿Olvidaste tu contraseña?
               </Link>
             </p>
           </div>
         </CardContent>
       </Card>
-    </div>
   );
 }

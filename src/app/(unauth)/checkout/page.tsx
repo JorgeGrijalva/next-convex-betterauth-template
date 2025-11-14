@@ -46,7 +46,7 @@ function CheckoutInner() {
 
   if (!planId) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="bg-slate-800 border-slate-700 text-white">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -63,7 +63,7 @@ function CheckoutInner() {
 
   if (loadingPlan) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-white">Cargando información del plan...</div>
       </div>
     );
@@ -71,7 +71,7 @@ function CheckoutInner() {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="bg-slate-800 border-slate-700 text-white">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -160,9 +160,9 @@ function CheckoutInner() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/95 backdrop-blur">
+      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="text-2xl font-bold text-purple-400">
@@ -407,7 +407,7 @@ function CheckoutInner() {
 export default function CheckoutPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-white">Cargando...</div>
       </div>
     }>
