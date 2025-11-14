@@ -1,19 +1,23 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
 
 import { env } from "@/env";
 import { appRouter } from "@/server/api/root";
-import { createTRPCContext } from "@/server/api/trpc";
+import { authOptions } from "@/server/auth";
+import { db } from "@/server/db";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
  * handling a HTTP request (e.g. when you make requests from Client Components).
  */
 const createContext = async (req: NextRequest) => {
-  return createTRPCContext({
-    req,
-    res: undefined, // App Router doesn't have res, but createTRPCContext expects it
-  } as any);
+  const session = await getServerSession(authOptions);
+  
+  return {
+    session,
+    db,
+  };
 };
 
 const handler = async (req: NextRequest) =>

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -22,9 +23,29 @@ import {
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const { data: userDashboard } = api.users.getDashboard.useQuery();
-  const { data: affiliateStats } = api.affiliates.getMyStats.useQuery();
+  const { data: userDashboard } = api.users.getDashboard.useQuery(undefined, {
+    enabled: !!session?.user,
+  });
+  const { data: affiliateStats } = api.affiliates.getMyStats.useQuery(undefined, {
+    enabled: !!session?.user,
+  });
+
+  // Redirect usando useEffect para evitar el error de setState durante render
+  React.useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/sign-in");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">Cargando...</div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") {

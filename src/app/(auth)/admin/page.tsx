@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentPayments?.map((payment) => (
+              {recentPayments?.map((payment: any) => (
                 <div key={payment.id} className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-white">
