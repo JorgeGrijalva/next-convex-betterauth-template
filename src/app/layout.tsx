@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/next-theme/theme-provider";
 import { Footer } from "@/components/footer";
 import { TRPCReactProvider } from "@/components/providers/trpc-provider";
 import { SessionProviderWrapper } from "@/components/providers/session-provider";
-import { Navbar } from "@/components/navbar";
+import { AppShell } from "@/components/app-shell";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,10 +35,9 @@ export default function RootLayout({
           >
             <TRPCReactProvider>
               <SessionProviderWrapper>
-                <Navbar />
-                <main className="w-full max-w-6xl mx-auto px-4 md:px-6 grow flex flex-col">
+                <AppShell>
                   {children}
-                </main>
+                </AppShell>
                 <Footer />
               </SessionProviderWrapper>
             </TRPCReactProvider>
