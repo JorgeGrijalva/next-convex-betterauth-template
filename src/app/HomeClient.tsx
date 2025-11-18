@@ -10,14 +10,14 @@ export default function HomeClient() {
   const { data: plans } = api.plans.getActivePlans.useQuery();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#002BE7] via-[#0020B2] to-[#000E4C]">
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-bold text-white">
               Flutv
-              <span className="block text-3xl md:text-4xl text-purple-300 mt-2">
+              <span className="block text-3xl md:text-4xl text-blue-300 mt-2">
                 Tu IPTV de Confianza
               </span>
             </h1>
@@ -27,13 +27,13 @@ export default function HomeClient() {
           </div>
 
           <div className="flex gap-4 justify-center">
-            <Button asChild size="lg" className="bg-purple-600 hover:bg-purple-700">
+            <Button asChild size="lg" className="bg-[#002BE7] hover:bg-[#000E4C]">
               <Link href="/planes">
                 <Play className="mr-2 h-4 w-4" />
                 Ver Planes
               </Link>
             </Button>
-            <Button variant="outline" size="lg" asChild className="border-purple-400 text-purple-400 hover:bg-purple-400">
+            <Button variant="outline" size="lg" asChild className="border-blue-400 text-blue-400 hover:border-white hover:text-white hover:bg-transparent">
               <Link href="/afiliados">
                 <Users className="mr-2 h-4 w-4" />
                 Programa de Afiliados
@@ -47,7 +47,7 @@ export default function HomeClient() {
           <Card className="bg-slate-800/50 border-slate-700 text-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Play className="h-5 w-5 text-purple-400" />
+                <Play className="h-5 w-5 text-blue-400" />
                 Calidad HD
               </CardTitle>
             </CardHeader>
@@ -61,7 +61,7 @@ export default function HomeClient() {
           <Card className="bg-slate-800/50 border-slate-700 text-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-purple-400" />
+                <CreditCard className="h-5 w-5 text-blue-400" />
                 Pago Seguro
               </CardTitle>
             </CardHeader>
@@ -75,7 +75,7 @@ export default function HomeClient() {
           <Card className="bg-slate-800/50 border-slate-700 text-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-purple-400" />
+                <Shield className="h-5 w-5 text-blue-400" />
                 Soporte 24/7
               </CardTitle>
             </CardHeader>
@@ -102,10 +102,10 @@ export default function HomeClient() {
                 duration: number;
                 description: string | null;
               }) => (
-                <Card key={plan.id} className="bg-slate-800/50 border-slate-700 text-white hover:border-purple-500 transition-colors">
+                <Card key={plan.id} className="bg-slate-800/50 border-slate-700 text-white hover:border-blue-500 transition-colors">
                   <CardHeader>
                     <CardTitle className="text-xl">{plan.name}</CardTitle>
-                    <div className="text-2xl font-bold text-purple-400">
+                    <div className="text-2xl font-bold text-blue-400">
                       ${plan.price} {plan.currency}
                     </div>
                     <div className="text-sm text-gray-400">
@@ -116,7 +116,7 @@ export default function HomeClient() {
                     {plan.description && (
                       <p className="text-gray-300 mb-4">{plan.description}</p>
                     )}
-                    <Button asChild className="w-full bg-purple-600 hover:bg-purple-700">
+                    <Button asChild className="w-full bg-[#002BE7] hover:bg-[#000E4C]">
                       <Link href={`/checkout?planId=${plan.id}`}>
                         Comprar Ahora
                       </Link>
